@@ -5,10 +5,10 @@ Team: Victor Ongkowijaya (vo6@princeton.edu), Satadal Sengupta
  
 ## Proposal
 
-*Background*
+### Background
  
-- _Name of paper_: Freenet: A Distributed Anonymous Information Storage and
-Retrieval System, by Clarke et al. 
+- _Name of paper_: [Freenet: A Distributed Anonymous Information Storage and
+Retrieval System, by Clarke et al.](http://homepage.divms.uiowa.edu/~ghosh/freenet.pdf)
 
 - _Brief summary of paper’s problem domain / challenge, goals, and technical
 approach_: Distributed file systems provide little privacy for both producers
@@ -33,7 +33,7 @@ tolerance (request pathlength as nodes failed). They also evaluate their
 system’s security, providing a discussion of possible attacks and security
 measures.
 
-*Plan*
+### Plan
  
 - _Proposed implementation (language, framework, etc.)_: We plan to use Go to
 re-implement the code to run on each node, which includes various aspects: key
