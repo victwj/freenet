@@ -71,3 +71,37 @@ such as in fault tolerance (how many requests were failed), efficiency (actual
 experienced latency as opposed to number of hops), persistence (how long files
 persist and its relation to usage), and topology (behavior of system in more
 real-world accurate network topologies) among many potential others.
+
+### Particulars
+
+The following presents the core components of Freenet and what constitutes MVP or stretch.
+
+- _Keys and searching:_ We will implement the mechanisms of the keyword signed key (KSK) which is the simplest key type for freenet to work. Our stretch goals will include the other key types, namely: signed subspace key (used to address the issue of a global namespace, effectively providing a directory-like system for users) and content hash key (used to implement updating and splitting of files). An additional stretch goal is the key finding mechanisms. Clarke et al suggested a hypertext spider to crawl the net, a file indirection mechanism, or simply using user-compiled indexes. We will use a manually compiled index as an MVP. 
+
+- _Retrieving data:_ We need to implement the algorithm running on every node to handle requests for certain keys. Formally, this routing works as a steepest-ascent hill-climbing search with backtracking. Additionally, nodes need the algorithm to handle and update its dynamic routing table, a hops-to-live (similar to IP TTL) implementation to avoid infinite loops, and a pseudorandom identifier on each request. This is necessary for the MVP.
+
+- _Storing data:_ This is the mechanism for users to store their files, and works similarly to the data retrieval algorithm in the previous section. This is necessary for the MVP.
+
+- _Managing data:_ This component deals with space optimizations of nodes in freenet, which we will designate as a stretch goal. This includes an LRU-style mechanism in which files in freenet will eventually expire, along with the associated interactions with node routing tables. 
+
+- _Node additions:_ When a node joins freenet, it needs to perform a few tasks. A scheme similar to the data retrieval mechanism is used for nodes to get more information about the network. A new protocol to announce itself to other nodes needs to be implemented. This is necessary for the MVP.
+
+In summary, the stretch goals in tentative order of priority would be: data management, signed subspace key, content hash key, and key finding mechanisms.
+
+These are the graphs we want to reproduce:
+
+- Figure 2, p.13, time evolution of the request pathlength, which evaluates efficiency.
+- Figure 3, p.14, request pathlength versus network size, which evaluates scalability.
+- Figure 4, p.15, change in request pathlength on network failure, which evaluates fault tolerance.
+
+As a stretch, the graphs we would like to have are: 
+
+- Failed requests under simulated random traffic, which evaluates fault tolerance.
+- Additional evaluation on graphs 1 and 2 depending on the system network topology.
+- Persistence of files, in the event we implement the relevant stretch goals.
+
+### Details to figure out (based on discussion with Mike)
+
+- _Eviction model:_ More clarity required on the eviction model for the routing table at each node. Requires better understanding of the interplay between routing and data caching.
+
+- _Experimental scenarios:_ Fix experimental scenarios, e.g., request load based on a random distribution.
