@@ -11,7 +11,7 @@ const (
 	nodeTableCapacity   = 5 // TODO: Decide on a value
 	hopsToLiveDefault   = 5 // TODO: Decide on a value
 
-	// Node message type codes
+	// Node message types
 	failMsgType = 0
 	joinMsgType = 1
 )
@@ -71,8 +71,6 @@ func (n *node) listen() {
 
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
-		fmt.Printf("Node %d received: %s\n", n.id, msg.body)
-
 		// Hops to live too low
 		if msg.htl <= 0 {
 			failMsg := n.newNodeMsg(failMsgType, "")
@@ -87,7 +85,7 @@ func (n *node) listen() {
 		if msgType == failMsgType {
 
 		} else if msgType == joinMsgType {
-
+			n.joinHandler(msg)
 		}
 	}
 
@@ -96,11 +94,4 @@ func (n *node) listen() {
 
 func (n *node) send(msg nodeMsg, dst chan<- nodeMsg) {
 	dst <- msg
-}
-
-// Freenet-specific functions, built on top of primitive ops
-
-func (n *node) sendJoinRequest(dst chan<- nodeMsg) {
-	msg := n.newNodeMsg(joinMsgType, "Test join message")
-	n.send(msg, dst)
 }
