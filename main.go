@@ -19,7 +19,7 @@ func main() {
 
 	// Simple testing
 	n1 := newNode(1)
-	n1.SendJoinRequest(nodes[0].ch)
+	n1.sendJoinRequest(nodes[0].ch)
 
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)
