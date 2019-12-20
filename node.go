@@ -74,7 +74,7 @@ func (n *node) listen() {
 		// Hops to live too low
 		if msg.htl <= 0 {
 			failMsg := n.newNodeMsg(failMsgType, "")
-			n.send(failMsg, msg.from.ch)
+			n.send(failMsg, msg.from)
 		}
 
 		// Decrement HTL
@@ -92,6 +92,6 @@ func (n *node) listen() {
 	fmt.Printf("Node %d done\n", n.id)
 }
 
-func (n *node) send(msg nodeMsg, dst chan<- nodeMsg) {
-	dst <- msg
+func (n *node) send(msg nodeMsg, dst *node) {
+	dst.ch <- msg
 }
