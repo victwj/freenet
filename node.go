@@ -2,15 +2,18 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 const (
 	// Configuration constants
 	nodeChannelCapacity = 5 // TODO: Decide on a value
 	nodeTableCapacity   = 5 // TODO: Decide on a value
+	hopsToLiveDefault   = 5 // TODO: Decide on a value
 
 	// Node message type codes
-	joinMsgType = 0
+	failMsgType = 0
+	joinMsgType = 1
 )
 
 // Freenet node
@@ -18,15 +21,15 @@ type node struct {
 	id    uint32
 	ch    chan nodeMsg
 	table []*node
+	files []string
 }
 
 // Messages sent by nodes
 type nodeMsg struct {
 	msgType uint8
 	msgID   uint32
-	from    uint32
-	to      uint32
 	htl     int
+	from    *node
 	body    string
 }
 
@@ -37,6 +40,19 @@ func newNode(id uint32) *node {
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
 	n.table = make([]*node, nodeTableCapacity)
 	return n
+}
+
+// Factory for node messages
+// Member function of node, since we need a reference to sender
+// Don't return pointer since we never really work with pointer to msg
+func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
+	m := new(nodeMsg)
+	m.msgType = msgType
+	m.msgID = rand.Uint32() // Random number for msg ID
+	m.htl = hopsToLiveDefault
+	m.from = n
+	m.body = body
+	return *m
 }
 
 // Core functions of a node, emulating primitive operations
@@ -56,8 +72,23 @@ func (n *node) listen() {
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
 		fmt.Printf("Node %d received: %s\n", n.id, msg.body)
-		// TODO: parse the message, act based on message type
-		// if messageType == joinMessage, ...
+
+		// Hops to live too low
+		if msg.htl <= 0 {
+			failMsg := n.newNodeMsg(failMsgType, "")
+			n.send(failMsg, msg.from.ch)
+		}
+
+		// Decrement HTL
+		msg.htl -= 1
+		msgType := msg.msgType
+
+		// Act based on message type
+		if msgType == failMsgType {
+
+		} else if msgType == joinMsgType {
+
+		}
 	}
 
 	fmt.Printf("Node %d done\n", n.id)
@@ -70,7 +101,6 @@ func (n *node) send(msg nodeMsg, dst chan<- nodeMsg) {
 // Freenet-specific functions, built on top of primitive ops
 
 func (n *node) sendJoinRequest(dst chan<- nodeMsg) {
-	var msg nodeMsg
-	msg.body = fmt.Sprintf("Test join message from node %d", n.id)
+	msg := n.newNodeMsg(joinMsgType, "Test join message")
 	n.send(msg, dst)
 }
