@@ -9,6 +9,7 @@ const (
 	// Configuration constants
 	nodeChannelCapacity = 5 // TODO: Decide on a value
 	nodeTableCapacity   = 5 // TODO: Decide on a value
+	nodeFileCapacity    = 5 // TODO: Decide on a value
 	hopsToLiveDefault   = 5 // TODO: Decide on a value
 
 	// Node message types
@@ -39,6 +40,7 @@ func newNode(id uint32) *node {
 	n.id = id
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
 	n.table = make([]*node, nodeTableCapacity)
+	n.files = make([]string, nodeFileCapacity)
 	return n
 }
 
