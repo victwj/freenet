@@ -14,25 +14,42 @@ const (
 	hopsToLiveDefault   = 5 // TODO: Decide on a value
 
 	// Node message types
-	failMsgType = 0
-	joinMsgType = 1
+	failMsgType        = 0
+	joinMsgType        = 1
+	fileInsertMsgType  = 10
+	fileRequestMsgType = 11
 )
 
 // Freenet node
 type node struct {
-	id    uint32
-	ch    chan nodeMsg
-	table [nodeTableCapacity]*node
-	files [nodeFileCapacity]string
+	id    uint32                   // Unique ID per node
+	ch    chan nodeMsg             // The "IP/port" of the node
+	table [nodeTableCapacity]*node // Routing table
+	files [nodeFileCapacity]string // Files stored in "disk"
 }
 
 // Messages sent by nodes
+/* Not implemented:
+- Finite forwarding probability of HTL/Depth == 1
+- Obfuscating depth by setting it randomly
+*/
 type nodeMsg struct {
-	msgType uint8
-	msgID   uint32
-	htl     int
-	from    *node
-	body    string
+	msgType uint8  // Type of message, see constants
+	msgID   uint64 // Unique ID of this transaction
+	htl     int    // Hops to live
+	depth   int    // To let packets backtrack successfully
+	from    *node  // Pointer to node which sent this msg
+	body    string // String body, depends on msg type
+}
+
+// String conversion for logging
+func (n node) String() string {
+	return fmt.Sprintf("Node %d", n.id)
+}
+
+// String conversion for logging
+func (m nodeMsg) String() string {
+	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Depth: %d, Body: %s)", m.msgID, m.from.id, m.msgType, m.htl, m.depth, m.body)
 }
 
 // Factory function, Golang doesn't have constructors
@@ -43,26 +60,17 @@ func newNode(id uint32) *node {
 	return n
 }
 
-// String conversion for logging
-func (n node) String() string {
-	return fmt.Sprintf("Node %d", n.id)
-}
-
-// String conversion for logging
-func (m nodeMsg) String() string {
-	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Body: %s)", m.msgID, m.from.id, m.msgType, m.htl, m.body)
-}
-
 // Factory for node messages
 // Member function of node, since we need a reference to sender
 // Don't return pointer since we never really work with pointer to msg
 func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	m := new(nodeMsg)
 	m.msgType = msgType
-	m.msgID = rand.Uint32() // Random number for msg ID
+	m.msgID = rand.Uint64() // Random number for msg ID
 	m.htl = hopsToLiveDefault
 	m.from = n
 	m.body = body
+	m.depth = 0
 	return *m
 }
 
