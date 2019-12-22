@@ -2,14 +2,15 @@
 package main
 
 import (
-	"fmt"
+	"log"
 )
 
 func (n *node) joinHandler(msg nodeMsg) {
-	fmt.Printf("Node %d received join from node %d\n", n.id, msg.from.id)
+	log.Println(n, "handling join", msg)
+
 }
 
 func (n *node) sendJoinRequest(dst *node) {
-	msg := n.newNodeMsg(joinMsgType, "Test Message")
+	msg := n.newNodeMsg(joinMsgType, "Test Join")
 	n.send(msg, dst)
 }

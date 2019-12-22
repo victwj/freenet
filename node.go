@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 )
 
@@ -44,6 +45,16 @@ func newNode(id uint32) *node {
 	return n
 }
 
+// String conversion for logging
+func (n node) String() string {
+	return fmt.Sprintf("Node %d", n.id)
+}
+
+// String conversion for logging
+func (m nodeMsg) String() string {
+	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Body: %s)", m.msgID, m.from.id, m.msgType, m.htl, m.body)
+}
+
 // Factory for node messages
 // Member function of node, since we need a reference to sender
 // Don't return pointer since we never really work with pointer to msg
@@ -60,7 +71,7 @@ func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
 // Core functions of a node, emulating primitive operations
 
 func (n *node) start() {
-	fmt.Printf("Node %d started\n", n.id)
+	log.Println(n, "started")
 	go n.listen()
 }
 
@@ -69,10 +80,12 @@ func (n *node) stop() {
 }
 
 func (n *node) listen() {
-	fmt.Printf("Node %d listening\n", n.id)
+	log.Println(n, "listening")
 
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
+		log.Println(n, "received", msg)
+
 		// Hops to live too low
 		if msg.htl <= 0 {
 			failMsg := n.newNodeMsg(failMsgType, "")
@@ -91,7 +104,7 @@ func (n *node) listen() {
 		}
 	}
 
-	fmt.Printf("Node %d done\n", n.id)
+	log.Println(n, "done")
 }
 
 func (n *node) send(msg nodeMsg, dst *node) {
