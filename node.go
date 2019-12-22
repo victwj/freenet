@@ -9,23 +9,44 @@ import (
 const (
 	// Configuration constants
 	nodeChannelCapacity = 5 // TODO: Decide on a value
-	nodeTableCapacity   = 5 // TODO: Decide on a value
-	nodeFileCapacity    = 5 // TODO: Decide on a value
-	hopsToLiveDefault   = 5 // TODO: Decide on a value
+	nodeTableCapacity   = 5 // 250 // 5.1 pg.12
+	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
+	hopsToLiveDefault   = 5 // 20  // 5.1 pg.13
 
 	// Node message types
-	failMsgType        = 0
-	joinMsgType        = 1
-	fileInsertMsgType  = 10
-	fileRequestMsgType = 11
+	failMsgType = 0
+	joinMsgType = 1
+
+	requestInsertMsgType   = 10
+	requestDataMsgType     = 11
+	requestContinueMsgType = 12
+
+	replyInsertMsgType   = 20
+	replyNotFoundMsgType = 21
+	replyRestartMsgType  = 22
+
+	sendDataMsgType   = 30
+	sendInsertMsgType = 31
+
+	/* Message types from paper:
+	Request.Data = request file
+	Reply.Restart = tell nodes to extend timeout
+	Send.Data = file found, sending back
+	Reply.NotFound = file not found
+	Request.Continue = if file not found, but there is HTL remaining
+	Request.Insert = file insert
+	Reply.Insert = insert can go ahead
+	Send.Insert = contains the data
+	*/
 )
 
 // Freenet node
 type node struct {
-	id    uint32                   // Unique ID per node
-	ch    chan nodeMsg             // The "IP/port" of the node
-	table [nodeTableCapacity]*node // Routing table
-	files [nodeFileCapacity]string // Files stored in "disk"
+	id      uint32                   // Unique ID per node
+	ch      chan nodeMsg             // The "IP/port" of the node
+	table   [nodeTableCapacity]*node // Routing table
+	files   [nodeFileCapacity]string // Files stored in "disk"
+	pending map[uint64]bool          // Pending jobs, msgID->nodeMsg
 }
 
 // Messages sent by nodes
@@ -100,6 +121,7 @@ func (n *node) listen() {
 
 		// Decrement HTL
 		msg.htl -= 1
+		msg.depth += 1
 		msgType := msg.msgType
 
 		// Act based on message type, call handlers
