@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+
+	lru "github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -42,11 +44,16 @@ const (
 
 // Freenet node
 type node struct {
-	id      uint32                   // Unique ID per node
-	ch      chan nodeMsg             // The "IP/port" of the node
-	table   [nodeTableCapacity]*node // Routing table
-	files   [nodeFileCapacity]string // Files stored in "disk"
-	pending map[uint64]bool          // Pending jobs, msgID->nodeMsg
+	id    uint32       // Unique ID per node
+	ch    chan nodeMsg // The "IP/port" of the node
+	table *lru.Cache   // Routing table
+	files *lru.Cache   // Files stored in "disk"
+	// pending map[uint64]bool // Pending jobs, msgID->nodeMsg
+	// If packets can drop, we need pending jobs to time out
+	// But packets will never be dropped in current implementation
+	// If channel is full, sender will block
+	// But, probably deadlock potential here..
+	// Deferring for now
 }
 
 // Messages sent by nodes
@@ -78,6 +85,8 @@ func newNode(id uint32) *node {
 	n := new(node)
 	n.id = id
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
+	n.table, _ = lru.New(nodeTableCapacity)
+	n.files, _ = lru.New(nodeFileCapacity)
 	return n
 }
 

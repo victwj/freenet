@@ -20,16 +20,16 @@ func main() {
 		nodes[i].start()
 	}
 
-	// Each node has everyone else in its routing table
-	for i := uint32(0); i < uint32(len(nodes)); i++ {
-		ctr := 0
-		for j := uint32(0); j < uint32(len(nodes)); j++ {
-			if i != j {
-				nodes[i].table[ctr] = nodes[j]
-				ctr++
-			}
-		}
-	}
+	// // Each node has everyone else in its routing table
+	// for i := uint32(0); i < uint32(len(nodes)); i++ {
+	// 	ctr := 0
+	// 	for j := uint32(0); j < uint32(len(nodes)); j++ {
+	// 		if i != j {
+	// 			nodes[i].table.Add(nodes[j])
+	// 			ctr++
+	// 		}
+	// 	}
+	// }
 
 	// Simple testing
 	n1 := newNode(5)
@@ -38,6 +38,11 @@ func main() {
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)
 
+	// Testing KSK, must all be the same and deterministic
 	_, _, ksk := genKeywordSignedKey("/test/test/hello")
+	fmt.Println(ksk)
+	_, _, ksk = genKeywordSignedKey("/test/test/hello")
+	fmt.Println(ksk)
+	_, _, ksk = genKeywordSignedKey("/test/test/hello")
 	fmt.Println(ksk)
 }
