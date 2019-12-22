@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -36,4 +37,7 @@ func main() {
 
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)
+
+	_, _, ksk := genKeywordSignedKey("/test/test/hello")
+	fmt.Println(ksk)
 }

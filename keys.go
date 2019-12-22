@@ -11,9 +11,15 @@ import (
 
 // Generates 40 hex characters
 // I.e. 40 * 4 = 160 bits / 8 = 20 bytes
-func hash(s string) string {
+func hashString(s string) string {
 	h := sha1.New()
 	h.Write([]byte(s))
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func hashBytes(b []byte) string {
+	h := sha1.New()
+	h.Write(b)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
@@ -33,4 +39,11 @@ func genEdKey(s string) (ed25519.PublicKey, ed25519.PrivateKey) {
 		panic(err)
 	}
 	return pub, priv
+}
+
+// Generate freenet keyword signed key
+func genKeywordSignedKey(descr string) (ed25519.PublicKey, ed25519.PrivateKey, string) {
+	pub, priv := genEdKey(descr)
+	ksk := hashBytes(pub)
+	return pub, priv, ksk
 }
