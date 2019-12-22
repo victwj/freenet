@@ -13,12 +13,25 @@ func main() {
 	// Slice containing all nodes
 	var nodes []*node
 
-	// Create and start the first freenet node
-	nodes = append(nodes, newNode(0))
-	nodes[0].start()
+	// Initialize freenet with 5 nodes
+	for i := uint32(0); i < 5; i++ {
+		nodes = append(nodes, newNode(i))
+		nodes[i].start()
+	}
+
+	// Each node has everyone else in its routing table
+	for i := uint32(0); i < uint32(len(nodes)); i++ {
+		ctr := 0
+		for j := uint32(0); j < uint32(len(nodes)); j++ {
+			if i != j {
+				nodes[i].table[ctr] = nodes[j]
+				ctr++
+			}
+		}
+	}
 
 	// Simple testing
-	n1 := newNode(1)
+	n1 := newNode(5)
 	n1.sendJoinRequest(nodes[0])
 
 	// Wait a little to let nodes log

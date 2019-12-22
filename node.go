@@ -22,8 +22,8 @@ const (
 type node struct {
 	id    uint32
 	ch    chan nodeMsg
-	table []*node
-	files []string
+	table [nodeTableCapacity]*node
+	files [nodeFileCapacity]string
 }
 
 // Messages sent by nodes
@@ -40,8 +40,6 @@ func newNode(id uint32) *node {
 	n := new(node)
 	n.id = id
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
-	n.table = make([]*node, nodeTableCapacity)
-	n.files = make([]string, nodeFileCapacity)
 	return n
 }
 
@@ -96,7 +94,7 @@ func (n *node) listen() {
 		msg.htl -= 1
 		msgType := msg.msgType
 
-		// Act based on message type
+		// Act based on message type, call handlers
 		if msgType == failMsgType {
 
 		} else if msgType == joinMsgType {
