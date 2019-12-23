@@ -54,11 +54,6 @@ type node struct {
 	table     *lru.Cache     // Routing table
 	disk      *lru.Cache     // Files stored in "disk"
 	processor *nodeProcessor // Cache with timeout, stores pending msg IDs
-	// If packets can drop, we need pending jobs to time out
-	// But packets will never be dropped in current implementation
-	// If channel is full, sender will block
-	// But, probably deadlock potential here..
-	// Deferring for now
 }
 
 // Messages sent by nodes
@@ -88,8 +83,8 @@ type nodeProcessor struct {
 type nodeJob struct {
 	from     *node // Who sent this job
 	routeNum int
-	// E.g. if routeNum == 2, we want to use the second match
-	// of the routing table. Means the first match was unsuccessful
+	// E.g. if routeNum == 1, we want to use the second match (0-indexed)
+	// This means the first match was previously unsuccessful
 }
 
 // String conversion for logging
@@ -182,9 +177,13 @@ func (n *node) addJob(msg nodeMsg) *nodeJob {
 	if n.processor.jobs.ItemCount() >= n.processor.capacity {
 		return nil
 	}
+
+	// Create job
 	job := new(nodeJob)
 	job.from = msg.from
 	job.routeNum = 0
+
+	// Add to processor
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	n.processor.jobs.SetDefault(msgID, job)
 	return job
@@ -192,13 +191,16 @@ func (n *node) addJob(msg nodeMsg) *nodeJob {
 
 // If job exists in processor, return the nodeJob, increment routeNum
 // If it doesn't exist, return nil
+// Note: This getter changes state
 func (n *node) getJob(msg nodeMsg) *nodeJob {
 	msgID := strconv.FormatUint(msg.msgID, 10)
+
+	// Check if this job exists in processor
 	val, found := n.processor.jobs.Get(msgID)
 	if found {
 		job := val.(*nodeJob)
-		job.routeNum += 1
 		// Increment the routeNum
+		job.routeNum += 1
 		n.processor.jobs.SetDefault(msgID, job)
 		return job
 	}
