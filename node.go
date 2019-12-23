@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -16,7 +17,7 @@ const (
 	nodeTableCapacity   = 5 // 250 // 5.1 pg.12
 	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
 	nodeJobTimeout      = 5
-	nodeJobCapacity     = 5
+	nodeJobCapacity     = 10
 	hopsToLiveDefault   = 5 // 20  // 5.1 pg.13
 
 	// Node message types
@@ -48,11 +49,11 @@ const (
 
 // Freenet node
 type node struct {
-	id        uint32        // Unique ID per node
-	ch        chan nodeMsg  // The "IP/port" of the node
-	table     *lru.Cache    // Routing table
-	disk      *lru.Cache    // Files stored in "disk"
-	processor nodeProcessor // Cache with timeout, stores pending msg IDs
+	id        uint32         // Unique ID per node
+	ch        chan nodeMsg   // The "IP/port" of the node
+	table     *lru.Cache     // Routing table
+	disk      *lru.Cache     // Files stored in "disk"
+	processor *nodeProcessor // Cache with timeout, stores pending msg IDs
 	// If packets can drop, we need pending jobs to time out
 	// But packets will never be dropped in current implementation
 	// If channel is full, sender will block
@@ -78,8 +79,17 @@ type nodeMsg struct {
 // Need to wrap since there is no way to limit the size without it
 // Safer this way
 type nodeProcessor struct {
-	jobs     *cache.Cache
+	jobs     *cache.Cache // Stores msgID->*nodeJob
 	capacity int
+}
+
+// The data type of a pending job, stored in nodeProcessor
+// Save space, instead of storing an entire nodeMsg
+type nodeJob struct {
+	from     *node // Who sent this job
+	routeNum int
+	// E.g. if routeNum == 2, we want to use the second match
+	// of the routing table. Means the first match was unsuccessful
 }
 
 // String conversion for logging
@@ -99,6 +109,9 @@ func newNode(id uint32) *node {
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
 	n.table, _ = lru.New(nodeTableCapacity)
 	n.disk, _ = lru.New(nodeFileCapacity)
+
+	// Initialize processor
+	n.processor = new(nodeProcessor)
 	n.processor.jobs = cache.New(nodeJobTimeout*time.Second, (nodeJobTimeout+1)*time.Second)
 	n.processor.capacity = nodeJobCapacity
 	return n
@@ -163,13 +176,31 @@ func (n *node) send(msg nodeMsg, dst *node) {
 }
 
 // Adds job to process
-// The job cache is a map of msgID/xactID -> routing table number
-// e.g. if routing table number is 2, will route to the second match
-func (n *node) addJob(msgID int, tableNum int) bool {
+// The job cache is a map of msgID/xactID -> *nodeJob
+func (n *node) addJob(msg nodeMsg) *nodeJob {
 	// Processor is full
 	if n.processor.jobs.ItemCount() >= n.processor.capacity {
-		return false
+		return nil
 	}
-	n.processor.jobs.Set(string(msgID), tableNum, cache.DefaultExpiration)
-	return true
+	job := new(nodeJob)
+	job.from = msg.from
+	job.routeNum = 0
+	msgID := strconv.FormatUint(msg.msgID, 10)
+	n.processor.jobs.SetDefault(msgID, job)
+	return job
+}
+
+// If job exists in processor, return the nodeJob, increment routeNum
+// If it doesn't exist, return nil
+func (n *node) getJob(msg nodeMsg) *nodeJob {
+	msgID := strconv.FormatUint(msg.msgID, 10)
+	val, found := n.processor.jobs.Get(msgID)
+	if found {
+		job := val.(*nodeJob)
+		job.routeNum += 1
+		// Increment the routeNum
+		n.processor.jobs.SetDefault(msgID, job)
+		return job
+	}
+	return nil
 }

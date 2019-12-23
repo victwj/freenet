@@ -31,7 +31,7 @@ func main() {
 	// 	}
 	// }
 
-	// Simple testing
+	// Test message handling
 	n1 := newNode(5)
 	n1.sendJoinRequest(nodes[0])
 
@@ -45,4 +45,18 @@ func main() {
 	fmt.Println(ksk)
 	_, _, ksk = genKeywordSignedKey("/test/test/hello")
 	fmt.Println(ksk)
+
+	// Test node processor
+	testMsg1 := n1.newNodeMsg(failMsgType, "test msg 1")
+	testMsg2 := n1.newNodeMsg(failMsgType, "test msg 2")
+	n1.addJob(testMsg1)
+
+	fmt.Println(n1.getJob(testMsg1))
+	fmt.Println(n1.getJob(testMsg1))
+	fmt.Println(n1.getJob(testMsg1))
+	fmt.Println(n1.getJob(testMsg2))
+
+	time.Sleep(8 * time.Second)
+	fmt.Println(n1.getJob(testMsg1)) //Should expire
+
 }
