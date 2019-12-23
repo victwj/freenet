@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru"
+	cache "github.com/patrickmn/go-cache"
 )
 
 const (
@@ -13,6 +15,8 @@ const (
 	nodeChannelCapacity = 5 // TODO: Decide on a value
 	nodeTableCapacity   = 5 // 250 // 5.1 pg.12
 	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
+	nodeJobTimeout      = 5
+	nodeJobCapacity     = 5
 	hopsToLiveDefault   = 5 // 20  // 5.1 pg.13
 
 	// Node message types
@@ -44,11 +48,11 @@ const (
 
 // Freenet node
 type node struct {
-	id    uint32       // Unique ID per node
-	ch    chan nodeMsg // The "IP/port" of the node
-	table *lru.Cache   // Routing table
-	files *lru.Cache   // Files stored in "disk"
-	// pending map[uint64]bool // Pending jobs, msgID->nodeMsg
+	id        uint32        // Unique ID per node
+	ch        chan nodeMsg  // The "IP/port" of the node
+	table     *lru.Cache    // Routing table
+	disk      *lru.Cache    // Files stored in "disk"
+	processor nodeProcessor // Cache with timeout, stores pending msg IDs
 	// If packets can drop, we need pending jobs to time out
 	// But packets will never be dropped in current implementation
 	// If channel is full, sender will block
@@ -63,11 +67,19 @@ type node struct {
 */
 type nodeMsg struct {
 	msgType uint8  // Type of message, see constants
-	msgID   uint64 // Unique ID of this transaction
+	msgID   uint64 // Unique ID, per transaction
 	htl     int    // Hops to live
 	depth   int    // To let packets backtrack successfully
 	from    *node  // Pointer to node which sent this msg
 	body    string // String body, depends on msg type
+}
+
+// Wrapper around the timeout cache storing pending jobs
+// Need to wrap since there is no way to limit the size without it
+// Safer this way
+type nodeProcessor struct {
+	jobs     *cache.Cache
+	capacity int
 }
 
 // String conversion for logging
@@ -86,7 +98,9 @@ func newNode(id uint32) *node {
 	n.id = id
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
 	n.table, _ = lru.New(nodeTableCapacity)
-	n.files, _ = lru.New(nodeFileCapacity)
+	n.disk, _ = lru.New(nodeFileCapacity)
+	n.processor.jobs = cache.New(nodeJobTimeout*time.Second, (nodeJobTimeout+1)*time.Second)
+	n.processor.capacity = nodeJobCapacity
 	return n
 }
 
@@ -146,4 +160,16 @@ func (n *node) listen() {
 
 func (n *node) send(msg nodeMsg, dst *node) {
 	dst.ch <- msg
+}
+
+// Adds job to process
+// The job cache is a map of msgID/xactID -> routing table number
+// e.g. if routing table number is 2, will route to the second match
+func (n *node) addJob(msgID int, tableNum int) bool {
+	// Processor is full
+	if n.processor.jobs.ItemCount() >= n.processor.capacity {
+		return false
+	}
+	n.processor.jobs.Set(string(msgID), tableNum, cache.DefaultExpiration)
+	return true
 }
