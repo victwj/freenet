@@ -206,3 +206,8 @@ func (n *node) getJob(msg nodeMsg) *nodeJob {
 	}
 	return nil
 }
+
+func (n *node) deleteJob(msg nodeMsg) {
+	msgID := strconv.FormatUint(msg.msgID, 10)
+	n.processor.jobs.Delete(msgID)
+}
