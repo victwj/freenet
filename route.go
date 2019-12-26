@@ -16,24 +16,24 @@ const (
 	Send.Insert = contains the data
 	*/
 
-	failMsgType = 0
+	FailMsgType = 0
 
 	// Requests
-	requestInsertMsgType   = 10
-	requestDataMsgType     = 11
-	requestContinueMsgType = 12
+	RequestInsertMsgType   = 10
+	RequestDataMsgType     = 11
+	RequestContinueMsgType = 12
 
 	// Replies
-	replyInsertMsgType   = 20
-	replyNotFoundMsgType = 21
-	replyRestartMsgType  = 22
+	ReplyInsertMsgType   = 20
+	ReplyNotFoundMsgType = 21
+	ReplyRestartMsgType  = 22
 
 	// Sends
-	sendDataMsgType   = 30
-	sendInsertMsgType = 31
+	SendDataMsgType   = 30
+	SendInsertMsgType = 31
 
 	// Temp
-	joinMsgType = 40
+	JoinMsgType = 40
 )
 
 func (n *node) route(msg nodeMsg) {
@@ -46,14 +46,37 @@ func (n *node) route(msg nodeMsg) {
 
 	// Hops to live too low
 	if msg.htl <= 0 {
-		failMsg := n.newNodeMsg(failMsgType, "")
+		// TODO: call routeExpire
+		failMsg := n.newNodeMsg(FailMsgType, "")
 		n.send(failMsg, msg.from)
 	}
 
 	// Act based on message type, call handlers
-	if msgType == failMsgType {
+	if msgType == FailMsgType {
 
-	} else if msgType == joinMsgType {
+	} else if msgType == JoinMsgType {
 		n.joinHandler(msg)
+	}
+}
+
+func (n *node) routeExpire(msg nodeMsg) {
+
+}
+
+func (n *node) routeFail(msg nodeMsg) {
+	// If job has not been seen before or expired
+	// Fail message means nothing, drop it
+	job := n.getJob(msg)
+	if job == nil {
+		return
+	}
+
+	// If job has been seen and we receive a fail
+	// Forward it to the boss of this job
+	// If we are the boss of this job, drop it
+	if msg.from == n {
+		n.deleteJob(msg)
+	} else {
+		n.send(msg, msg.from)
 	}
 }

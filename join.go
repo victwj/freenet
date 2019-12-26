@@ -11,6 +11,6 @@ func (n *node) joinHandler(msg nodeMsg) {
 }
 
 func (n *node) sendJoinRequest(dst *node) {
-	msg := n.newNodeMsg(joinMsgType, "Test Join")
+	msg := n.newNodeMsg(JoinMsgType, "Test Join")
 	n.send(msg, dst)
 }
