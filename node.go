@@ -19,32 +19,6 @@ const (
 	nodeJobTimeout      = 5
 	nodeJobCapacity     = 10
 	hopsToLiveDefault   = 5 // 20  // 5.1 pg.13
-
-	// Node message types
-	failMsgType = 0
-	joinMsgType = 1
-
-	requestInsertMsgType   = 10
-	requestDataMsgType     = 11
-	requestContinueMsgType = 12
-
-	replyInsertMsgType   = 20
-	replyNotFoundMsgType = 21
-	replyRestartMsgType  = 22
-
-	sendDataMsgType   = 30
-	sendInsertMsgType = 31
-
-	/* Message types from paper:
-	Request.Data = request file
-	Reply.Restart = tell nodes to extend timeout
-	Send.Data = file found, sending back
-	Reply.NotFound = file not found
-	Request.Continue = if file not found, but there is HTL remaining
-	Request.Insert = file insert
-	Reply.Insert = insert can go ahead
-	Send.Insert = contains the data
-	*/
 )
 
 // Freenet node
@@ -142,25 +116,7 @@ func (n *node) listen() {
 
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
-		log.Println(n, "received", msg)
-
-		// Decrement HTL
-		msg.htl -= 1
-		msg.depth += 1
-		msgType := msg.msgType
-
-		// Hops to live too low
-		if msg.htl <= 0 {
-			failMsg := n.newNodeMsg(failMsgType, "")
-			n.send(failMsg, msg.from)
-		}
-
-		// Act based on message type, call handlers
-		if msgType == failMsgType {
-
-		} else if msgType == joinMsgType {
-			n.joinHandler(msg)
-		}
+		n.route(msg)
 	}
 
 	log.Println(n, "done")
