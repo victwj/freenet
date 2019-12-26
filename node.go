@@ -144,16 +144,16 @@ func (n *node) listen() {
 	for msg := range n.ch {
 		log.Println(n, "received", msg)
 
+		// Decrement HTL
+		msg.htl -= 1
+		msg.depth += 1
+		msgType := msg.msgType
+
 		// Hops to live too low
 		if msg.htl <= 0 {
 			failMsg := n.newNodeMsg(failMsgType, "")
 			n.send(failMsg, msg.from)
 		}
-
-		// Decrement HTL
-		msg.htl -= 1
-		msg.depth += 1
-		msgType := msg.msgType
 
 		// Act based on message type, call handlers
 		if msgType == failMsgType {
