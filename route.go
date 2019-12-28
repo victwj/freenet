@@ -72,38 +72,8 @@ func (n *node) addRoutingTableEntry(key string, nodeEntry *node) {
 	n.table.Add(key, nodeEntry)
 }
 
-func (n *node) getRoutingTableEntry(key string) *node {
-	result, found := n.table.Get(key)
-	if found {
-		return result.(*node)
-	}
-	return nil
-}
-
-func (n *node) routeExpire(msg nodeMsg) {
-
-}
-
-func (n *node) routeFail(msg nodeMsg) {
-	// If job has not been seen before or expired
-	// Fail message means nothing, drop it
-	job := n.getJob(msg)
-	if job == nil {
-		return
-	}
-
-	// If job has been seen and we receive a fail
-	// Forward it to the boss of this job
-	// If we are the boss of this job, drop it
-	if msg.from == n {
-		n.deleteJob(msg)
-	} else {
-		n.send(msg, msg.from)
-	}
-}
-
 // Get the n-th match of the routing table, given a string to match
-func (n *node) getRouteMatch(match string, routeNum int) *node {
+func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 
 	// Sanity check
 	if routeNum == 0 {
@@ -138,7 +108,34 @@ func (n *node) getRouteMatch(match string, routeNum int) *node {
 		keyResult = heap.Pop(&pq).(*Item).value
 		routeNum--
 	}
-	return n.getRoutingTableEntry(keyResult)
+
+	// Return it
+	nodeResult, _ := n.table.Get(keyResult)
+	return nodeResult.(*node)
+}
+
+func (n *node) routeExpire(msg nodeMsg) {
+
+}
+
+func (n *node) routeFail(msg nodeMsg) {
+	// If job has not been seen before or expired
+	// Fail message means nothing, drop it
+	job := n.getJob(msg)
+	if job == nil {
+		return
+	}
+
+	// If job has been seen and we receive a fail
+	// Forward it to the boss of this job
+	// If we are the boss of this job, drop it
+	// TODO: Additional behavior if htl is nonzero
+	// TODO: Additional behavior depengind on msgType
+	if msg.from == n {
+		n.deleteJob(msg)
+	} else {
+		n.send(msg, msg.from)
+	}
 }
 
 // No need to do fancy things like levenshtein as long as consistent
