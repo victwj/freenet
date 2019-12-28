@@ -25,6 +25,7 @@ const (
 	RequestInsertMsgType   = 10
 	RequestDataMsgType     = 11
 	RequestContinueMsgType = 12
+	RequestJoinMsgType     = 13
 
 	// Replies
 	ReplyInsertMsgType   = 20
@@ -34,9 +35,6 @@ const (
 	// Sends
 	SendDataMsgType   = 30
 	SendInsertMsgType = 31
-
-	// Temp
-	JoinMsgType = 40
 )
 
 func (n *node) route(msg nodeMsg) {
@@ -56,9 +54,9 @@ func (n *node) route(msg nodeMsg) {
 
 	// Act based on message type, call handlers
 	if msgType == FailMsgType {
-		n.routeFail(msg)
-	} else if msgType == JoinMsgType {
-		n.serveJoinRequest(msg)
+		n.serveFail(msg)
+	} else if msgType == RequestJoinMsgType {
+		n.serveRequestJoin(msg)
 	} else if msgType == RequestDataMsgType {
 		n.serveRequestData(msg)
 	}
@@ -118,7 +116,7 @@ func (n *node) routeExpire(msg nodeMsg) {
 
 }
 
-func (n *node) routeFail(msg nodeMsg) {
+func (n *node) serveFail(msg nodeMsg) {
 	// If job has not been seen before or expired
 	// Fail message means nothing, drop it
 	job := n.getJob(msg)
