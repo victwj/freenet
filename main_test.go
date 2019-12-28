@@ -17,8 +17,8 @@ func TestKSK(t *testing.T) {
 
 func TestJob(t *testing.T) {
 	n1 := newNode(5)
-	testMsg1 := n1.newNodeMsg(failMsgType, "test msg 1")
-	testMsg2 := n1.newNodeMsg(failMsgType, "test msg 2")
+	testMsg1 := n1.newNodeMsg(FailMsgType, "test msg 1")
+	testMsg2 := n1.newNodeMsg(FailMsgType, "test msg 2")
 
 	n1.addJob(testMsg1)
 	a := n1.getJob(testMsg1)
@@ -42,5 +42,28 @@ func TestJob(t *testing.T) {
 	b = n1.getJob(testMsg2)
 	if b != nil {
 		t.Error("Expired job still found")
+	}
+}
+
+func TestStringSimilarity(t *testing.T) {
+	s1 := "abc"
+	s2 := "def"
+	s3 := "aef"
+	s4 := "abdc"
+
+	if stringSimilarity(s1, s2) != 0 {
+		t.Error("Error with comparing", s1, s2)
+	}
+	if stringSimilarity(s1, s3) != 1 {
+		t.Error("Error with comparing", s1, s3)
+	}
+	if stringSimilarity(s2, s3) != 2 {
+		t.Error("Error with comparing", s2, s3)
+	}
+	if stringSimilarity(s1, s1) != 3 {
+		t.Error("Error with comparing", s1, s1)
+	}
+	if stringSimilarity(s1, s4) != 2 {
+		t.Error("Error with comparing", s1, s4)
 	}
 }

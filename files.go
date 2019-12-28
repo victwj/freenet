@@ -5,11 +5,13 @@ func (n *node) sendFileInsert(descr string, file string) {
 
 }
 
-func (n *node) sendFileRequest(descr string) {
-
+// TODO: make routing table functions
+func (n *node) sendRequestData(descr string, dst *node) {
+	msg := n.newNodeMsg(RequestDataMsgType, descr)
+	n.send(msg, dst)
 }
 
-func (n *node) serveFileRequest(descr string) {
+func (n *node) serveRequestData(msg nodeMsg) {
 
 }
 

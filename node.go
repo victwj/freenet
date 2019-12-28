@@ -25,8 +25,8 @@ const (
 type node struct {
 	id        uint32         // Unique ID per node
 	ch        chan nodeMsg   // The "IP/port" of the node
-	table     *lru.Cache     // Routing table
-	disk      *lru.Cache     // Files stored in "disk"
+	table     *lru.Cache     // Routing table, string->*node
+	disk      *lru.Cache     // Files stored in "disk", string->string
 	processor *nodeProcessor // Cache with timeout, stores pending msg IDs
 }
 
@@ -128,10 +128,10 @@ func (n *node) send(msg nodeMsg, dst *node) {
 
 // Adds job to process
 // The job cache is a map of msgID/xactID -> *nodeJob
-func (n *node) addJob(msg nodeMsg) *nodeJob {
+func (n *node) addJob(msg nodeMsg) {
 	// Processor is full
 	if n.processor.jobs.ItemCount() >= n.processor.capacity {
-		return nil
+		return
 	}
 
 	// Create job
@@ -142,7 +142,6 @@ func (n *node) addJob(msg nodeMsg) *nodeJob {
 	// Add to processor
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	n.processor.jobs.SetDefault(msgID, job)
-	return job
 }
 
 // If job exists in processor, return the nodeJob, increment routeNum

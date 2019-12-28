@@ -1,7 +1,10 @@
 // Functions related to routing and handling messages
 package main
 
-import "log"
+import (
+	"container/heap"
+	"log"
+)
 
 const (
 
@@ -56,7 +59,25 @@ func (n *node) route(msg nodeMsg) {
 
 	} else if msgType == JoinMsgType {
 		n.joinHandler(msg)
+	} else if msgType == RequestDataMsgType {
+		n.serveRequestData(msg)
 	}
+}
+
+// Add entry to the routing table
+func (n *node) addRoutingTableEntry(key string, nodeEntry *node) {
+	if nodeEntry == n {
+		panic("Error: adding self to routing table")
+	}
+	n.table.Add(key, nodeEntry)
+}
+
+func (n *node) getRoutingTableEntry(key string) *node {
+	result, found := n.table.Get(key)
+	if found {
+		return result.(*node)
+	}
+	return nil
 }
 
 func (n *node) routeExpire(msg nodeMsg) {
@@ -79,4 +100,59 @@ func (n *node) routeFail(msg nodeMsg) {
 	} else {
 		n.send(msg, msg.from)
 	}
+}
+
+// Get the n-th match of the routing table, given a string to match
+func (n *node) getRouteMatch(match string, routeNum int) *node {
+
+	// Sanity check
+	if routeNum == 0 {
+		panic("routeNum is zero")
+	}
+
+	// Match immediately
+	if routeNum == 1 && n.table.Contains(match) {
+		result, _ := n.table.Get(match)
+		return result.(*node)
+	}
+	// Return nil immediately
+	if routeNum > n.table.Len() {
+		return nil
+	}
+
+	// Calculate all string similarities and put in a PQ
+	pq := make(PriorityQueue, n.table.Len())
+	for i, key := range n.table.Keys() {
+		keyStr := key.(string)
+		pq[i] = &Item{
+			value:    keyStr,
+			priority: stringSimilarity(match, keyStr),
+			index:    i,
+		}
+	}
+	heap.Init(&pq)
+
+	// Pop the PQ routeNum number of times
+	keyResult := ""
+	for routeNum > 0 {
+		keyResult = heap.Pop(&pq).(*Item).value
+		routeNum--
+	}
+	return n.getRoutingTableEntry(keyResult)
+}
+
+// No need to do fancy things like levenshtein as long as consistent
+// Count number of equivalent characters
+func stringSimilarity(s1 string, s2 string) int {
+	min := len(s1)
+	if len(s1) > len(s2) {
+		min = len(s2)
+	}
+	ctr := 0
+	for i := 0; i < min; i++ {
+		if s1[i] == s2[i] {
+			ctr += 1
+		}
+	}
+	return ctr
 }
