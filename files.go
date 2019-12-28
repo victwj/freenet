@@ -25,10 +25,56 @@ func (n *node) sendRequestData(descr string) {
 	}
 }
 
+// TODO: function WIP
 func (n *node) serveRequestData(msg nodeMsg) {
-	// TODO: For now, send a failure right back
-	msg.msgType = FailMsgType
-	n.send(msg, msg.from)
+	// The descr string is in the body
+	_, _, ksk := genKeywordSignedKey(msg.body)
+	fileFound := n.hasFile(ksk)
+
+	// If file is found, return it //TODO:
+	if fileFound {
+		// Don't forget to delete job too
+		return
+	}
+
+	// File is not found
+	// Create a job for this request if it doesn't exist
+	if !n.hasJob(msg) {
+		// Create the job, but it might fail
+		// If we can't create the job, send a not found
+		if !n.addJob(msg) {
+			msg.msgType = ReplyNotFoundMsgType
+			n.send(msg, msg.from)
+			return
+		}
+	}
+
+	// Forward the request for the file since we don't have it
+	job := n.getJob(msg)
+	dst := n.getRoutingTableEntry(ksk, job.routeNum)
+	// If there is a node to send to, send it
+	if dst != nil {
+		n.send(msg, dst)
+	} else {
+		// We ran out of possible forwarding nodes, send not found
+		// Delete the job and give up
+		msg.msgType = ReplyNotFoundMsgType
+		n.send(msg, job.from)
+		n.deleteJob(msg)
+	}
+}
+
+func (n *node) serveReplyNotFound(msg nodeMsg) {
+	// We received a file not found
+	// Delete the job associated with this request, and forward it
+	if n.hasJob(msg) {
+		job := n.getJob(msg)
+		// Only forward if we did not start off this whole request
+		if job.from != n {
+			n.send(msg, job.from)
+		}
+		n.deleteJob(msg)
+	}
 }
 
 func (n *node) addFile(fileKey string, file string) {
@@ -41,5 +87,11 @@ func (n *node) getFile(fileKey string) string {
 		return ""
 	}
 	return file.(string)
+
+}
+
+func (n *node) hasFile(fileKey string) bool {
+	_, found := n.disk.Peek(fileKey)
+	return found
 
 }

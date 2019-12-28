@@ -137,21 +137,35 @@ func (n *node) addJob(msg nodeMsg) bool {
 		return false
 	}
 
+	msgID := strconv.FormatUint(msg.msgID, 10)
+
+	// Job is in the processor but re adding it, error
+	_, found := n.processor.jobs.Get(msgID)
+	if found {
+		panic("Re-adding a job")
+	}
+
 	// Create job
 	job := new(nodeJob)
 	job.from = msg.from
 	job.routeNum = 0
 
 	// Add to processor
-	msgID := strconv.FormatUint(msg.msgID, 10)
 	n.processor.jobs.SetDefault(msgID, job)
 
 	return true
 }
 
+// Check if this job exists
+func (n *node) hasJob(msg nodeMsg) bool {
+	msgID := strconv.FormatUint(msg.msgID, 10)
+	_, found := n.processor.jobs.Get(msgID)
+	return found
+}
+
 // If job exists in processor, return the nodeJob, increment routeNum
 // If it doesn't exist, return nil
-// Note: This getter changes state
+// !!! Note: This getter changes state
 func (n *node) getJob(msg nodeMsg) *nodeJob {
 	msgID := strconv.FormatUint(msg.msgID, 10)
 
@@ -169,5 +183,8 @@ func (n *node) getJob(msg nodeMsg) *nodeJob {
 
 func (n *node) deleteJob(msg nodeMsg) {
 	msgID := strconv.FormatUint(msg.msgID, 10)
-	n.processor.jobs.Delete(msgID)
+	_, found := n.processor.jobs.Get(msgID)
+	if found {
+		n.processor.jobs.Delete(msgID)
+	}
 }

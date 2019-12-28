@@ -19,6 +19,7 @@ const (
 	Send.Insert = contains the data
 	*/
 
+	// Temporary: generic fail message to abort the task
 	FailMsgType = 0
 
 	// Requests
@@ -46,10 +47,12 @@ func (n *node) route(msg nodeMsg) {
 	msgType := msg.msgType
 
 	// Hops to live too low
-	if msg.htl <= 0 {
+	// TODO: Should probably be handled differently per-message type
+	if msg.htl < 0 {
+		return
 		// TODO: call routeExpire
-		failMsg := n.newNodeMsg(FailMsgType, "")
-		n.send(failMsg, msg.from)
+		// failMsg := n.newNodeMsg(FailMsgType, "")
+		// n.send(failMsg, msg.from)
 	}
 
 	// Act based on message type, call handlers
@@ -59,6 +62,8 @@ func (n *node) route(msg nodeMsg) {
 		n.serveRequestJoin(msg)
 	} else if msgType == RequestDataMsgType {
 		n.serveRequestData(msg)
+	} else if msgType == ReplyNotFoundMsgType {
+		n.serveReplyNotFound(msg)
 	}
 }
 
@@ -117,6 +122,7 @@ func (n *node) routeExpire(msg nodeMsg) {
 }
 
 func (n *node) serveFail(msg nodeMsg) {
+	// Get job associated with this message
 	// If job has not been seen before or expired
 	// Fail message means nothing, drop it
 	job := n.getJob(msg)
@@ -124,11 +130,12 @@ func (n *node) serveFail(msg nodeMsg) {
 		return
 	}
 
+	// TODO: Additional behavior if htl is nonzero
+	// TODO: Additional behavior depengind on msgType
+
 	// If job has been seen and we receive a fail
 	// Forward it to the boss of this job
 	// If we are the boss of this job, drop it
-	// TODO: Additional behavior if htl is nonzero
-	// TODO: Additional behavior depengind on msgType
 	if job.from == n {
 		log.Print("Deleted job")
 		n.deleteJob(msg)
