@@ -4,11 +4,6 @@ import (
 	"time"
 )
 
-/*
-How to run:
-$ go build
-$ ./freenet
-*/
 func main() {
 	// Slice containing all nodes
 	var nodes []*node
@@ -19,22 +14,14 @@ func main() {
 		nodes[i].start()
 	}
 
-	// // Each node has everyone else in its routing table
-	// for i := uint32(0); i < uint32(len(nodes)); i++ {
-	// 	ctr := 0
-	// 	for j := uint32(0); j < uint32(len(nodes)); j++ {
-	// 		if i != j {
-	// 			nodes[i].table.Add(nodes[j])
-	// 			ctr++
-	// 		}
-	// 	}
-	// }
+	nodes[0].addRoutingTableEntry("testkey", nodes[1])
 
-	// Test message handling
-	// n1 := newNode(5)
-	nodes[0].sendRequestData("/nonexistent/file", nodes[1])
-	// n1.sendJoinRequest(nodes[0])
+	// Wait a little to let nodes stabilize
+	time.Sleep(1 * time.Second)
+
+	// Send a data request
+	nodes[0].sendRequestData("/nonexistent/file")
 
 	// Wait a little to let nodes log
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 }
