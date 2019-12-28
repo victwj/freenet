@@ -5,13 +5,21 @@ func (n *node) sendFileInsert(descr string, file string) {
 
 }
 
-// TODO: make routing table functions
+// Sending a request
 func (n *node) sendRequestData(descr string, dst *node) {
+
 	msg := n.newNodeMsg(RequestDataMsgType, descr)
-	n.send(msg, dst)
+
+	// Add the job, if success, send it
+	if n.addJob(msg) {
+		n.send(msg, dst)
+	}
 }
 
 func (n *node) serveRequestData(msg nodeMsg) {
+	// For now, send a failure right back
+	msg.msgType = FailMsgType
+	n.send(msg, msg.from)
 
 }
 

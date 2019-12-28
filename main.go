@@ -31,8 +31,9 @@ func main() {
 	// }
 
 	// Test message handling
-	n1 := newNode(5)
-	n1.sendJoinRequest(nodes[0])
+	// n1 := newNode(5)
+	nodes[0].sendRequestData("/nonexistent/file", nodes[1])
+	// n1.sendJoinRequest(nodes[0])
 
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)

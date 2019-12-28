@@ -123,15 +123,18 @@ func (n *node) listen() {
 }
 
 func (n *node) send(msg nodeMsg, dst *node) {
+	// We never want to forward the wrong from field
+	msg.from = n
 	dst.ch <- msg
 }
 
 // Adds job to process
 // The job cache is a map of msgID/xactID -> *nodeJob
-func (n *node) addJob(msg nodeMsg) {
+// Return true if success, false otherwise
+func (n *node) addJob(msg nodeMsg) bool {
 	// Processor is full
 	if n.processor.jobs.ItemCount() >= n.processor.capacity {
-		return
+		return false
 	}
 
 	// Create job
@@ -142,6 +145,8 @@ func (n *node) addJob(msg nodeMsg) {
 	// Add to processor
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	n.processor.jobs.SetDefault(msgID, job)
+
+	return true
 }
 
 // If job exists in processor, return the nodeJob, increment routeNum

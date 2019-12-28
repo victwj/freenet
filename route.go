@@ -56,9 +56,9 @@ func (n *node) route(msg nodeMsg) {
 
 	// Act based on message type, call handlers
 	if msgType == FailMsgType {
-
+		n.routeFail(msg)
 	} else if msgType == JoinMsgType {
-		n.joinHandler(msg)
+		n.serveJoinRequest(msg)
 	} else if msgType == RequestDataMsgType {
 		n.serveRequestData(msg)
 	}
@@ -131,7 +131,8 @@ func (n *node) routeFail(msg nodeMsg) {
 	// If we are the boss of this job, drop it
 	// TODO: Additional behavior if htl is nonzero
 	// TODO: Additional behavior depengind on msgType
-	if msg.from == n {
+	if job.from == n {
+		log.Print("Deleted job")
 		n.deleteJob(msg)
 	} else {
 		n.send(msg, msg.from)
