@@ -4,6 +4,29 @@ import (
 	"testing"
 )
 
+func TestStringSimilarity(t *testing.T) {
+	s1 := "abc"
+	s2 := "def"
+	s3 := "aef"
+	s4 := "abdc"
+
+	if stringSimilarity(s1, s2) != 0 {
+		t.Error("Error with comparing", s1, s2)
+	}
+	if stringSimilarity(s1, s3) != 1 {
+		t.Error("Error with comparing", s1, s3)
+	}
+	if stringSimilarity(s2, s3) != 2 {
+		t.Error("Error with comparing", s2, s3)
+	}
+	if stringSimilarity(s1, s1) != 3 {
+		t.Error("Error with comparing", s1, s1)
+	}
+	if stringSimilarity(s1, s4) != 2 {
+		t.Error("Error with comparing", s1, s4)
+	}
+}
+
 func TestGetRouteMatch(t *testing.T) {
 	n := newNode(0)
 	n1 := newNode(1)
