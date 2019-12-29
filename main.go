@@ -15,10 +15,16 @@ func main() {
 		nodes[i].start()
 	}
 
-	nodes[0].addRoutingTableEntry("testkey", nodes[1])
+	// For now, testing things by adding things manually
+
+	// Add routing table entries
+	nodes[0].addRoutingTableEntry("cbb", nodes[1])
+	nodes[0].addRoutingTableEntry("cbbb", nodes[3])
 	nodes[1].addRoutingTableEntry("testkey", nodes[2])
 
+	// Add a file
 	nodes[2].addFileDescr("/existing/file", "hello world")
+	// "/existing/file KSK is cbbb589"
 
 	// Wait a little to let nodes stabilize
 	time.Sleep(1 * time.Second)
@@ -28,11 +34,14 @@ func main() {
 	nodes[0].sendRequestData("/existing/file")
 
 	// Wait a little to let nodes log
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Print final state of nodes
 	fmt.Println("\nFinal node states:")
 	for _, n := range nodes {
-		fmt.Println(n, n.table.Keys(), n.disk.Keys(), n.processor.jobs.Items())
+		fmt.Println(n,
+			"\n  Table:", n.table.Keys(),
+			"\n  Disk:", n.disk.Keys(),
+			"\n  Jobs:", n.processor.jobs.Items())
 	}
 }

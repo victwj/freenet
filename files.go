@@ -86,6 +86,7 @@ func (n *node) serveReplyNotFound(msg nodeMsg) {
 		// Try again if possible
 		dst := n.getRoutingTableEntry(ksk, job.routeNum)
 		if dst != nil {
+			msg.msgType = RequestDataMsgType
 			n.send(msg, dst)
 		} else {
 			// If we ran out of tries, forward the file not found

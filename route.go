@@ -4,6 +4,7 @@ package main
 import (
 	"container/heap"
 	"log"
+	"sort"
 )
 
 const (
@@ -97,7 +98,21 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 
 	// Calculate all string similarities and put in a PQ
 	pq := make(PriorityQueue, n.table.Len())
-	for i, key := range n.table.Keys() {
+	tableKeys := n.table.Keys()
+
+	// TODO: Sort will make this operation more stable but inefficient
+	// E.g. [A B] both have the same similarity score
+	// We match the first one, get A
+	// Next time, we get [B A], match the second one (want B),
+	// but we get A again since the keys don't have stable order
+	// Maybe not worth it, since the routing table can change
+	// anytime between jobs anyways and we cannot avoid the
+	// above behavior unless we explicitly track teh used keys per job
+	sort.Slice(tableKeys, func(i, j int) bool {
+		return tableKeys[i].(string) < tableKeys[j].(string)
+	})
+
+	for i, key := range tableKeys {
 		keyStr := key.(string)
 		pq[i] = &Item{
 			value:    keyStr,
