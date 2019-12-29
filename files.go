@@ -1,6 +1,10 @@
 // Functions related to inserting/removing files
 package main
 
+import (
+	"strings"
+)
+
 func (n *node) sendFileInsert(descr string, file string) {
 
 }
@@ -25,15 +29,23 @@ func (n *node) sendRequestData(descr string) {
 	}
 }
 
-// TODO: function WIP
 func (n *node) serveRequestData(msg nodeMsg) {
 	// The descr string is in the body
 	_, _, ksk := genKeywordSignedKey(msg.body)
 	fileFound := n.hasFile(ksk)
 
-	// If file is found, return it //TODO:
+	// If file is found, return it
 	if fileFound {
-		// Don't forget to delete job too
+		file := n.getFile(ksk)
+		msg.body = ksk + " " + file
+		msg.msgType = SendDataMsgType
+		msg.htl = msg.depth
+		msg.depth = 0
+		n.send(msg, msg.from)
+		// Don't forget to delete job too if it exists
+		// TODO: What if in the middle of file request
+		// File gets added in this node?
+		// n.deleteJob(msg)
 		return
 	}
 
@@ -75,6 +87,28 @@ func (n *node) serveReplyNotFound(msg nodeMsg) {
 		}
 		n.deleteJob(msg)
 	}
+}
+
+// We received a file we wanted
+func (n *node) serveSendData(msg nodeMsg) {
+	if n.hasJob(msg) {
+		job := n.getJob(msg)
+		// Only forward if we did not start off this whole request
+		if job.from != n {
+			n.send(msg, job.from)
+		}
+		// Cache this file
+		words := strings.Split(msg.body, " ")
+		key := words[0]
+		file := strings.Join(words[1:], " ")
+		n.addFile(key, file)
+		n.deleteJob(msg)
+	}
+}
+
+func (n *node) addFileDescr(descr string, file string) {
+	_, _, fileKey := genKeywordSignedKey(descr)
+	n.disk.Add(fileKey, file)
 }
 
 func (n *node) addFile(fileKey string, file string) {

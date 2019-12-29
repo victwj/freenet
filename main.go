@@ -18,11 +18,14 @@ func main() {
 	nodes[0].addRoutingTableEntry("testkey", nodes[1])
 	nodes[1].addRoutingTableEntry("testkey", nodes[2])
 
+	nodes[2].addFileDescr("/existing/file", "hello world")
+
 	// Wait a little to let nodes stabilize
 	time.Sleep(1 * time.Second)
 
 	// Send a data request
 	nodes[0].sendRequestData("/nonexistent/file")
+	nodes[0].sendRequestData("/existing/file")
 
 	// Wait a little to let nodes log
 	time.Sleep(3 * time.Second)

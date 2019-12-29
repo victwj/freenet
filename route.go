@@ -64,6 +64,8 @@ func (n *node) route(msg nodeMsg) {
 		n.serveRequestData(msg)
 	} else if msgType == ReplyNotFoundMsgType {
 		n.serveReplyNotFound(msg)
+	} else if msgType == SendDataMsgType {
+		n.serveSendData(msg)
 	}
 }
 
