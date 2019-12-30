@@ -48,12 +48,12 @@ func (n *node) route(msg nodeMsg) {
 	msgType := msg.msgType
 
 	// Hops to live too low
-	// TODO: Should probably be handled differently per-message type
 	if msg.htl < 0 {
+		// Special case
+		if msg.msgType == RequestInsertMsgType {
+			n.serveRequestInsertExpired(msg)
+		}
 		return
-		// TODO: call routeExpire
-		// failMsg := n.newNodeMsg(FailMsgType, "")
-		// n.send(failMsg, msg.from)
 	}
 
 	// Act based on message type, call handlers
@@ -67,6 +67,10 @@ func (n *node) route(msg nodeMsg) {
 		n.serveReplyNotFound(msg)
 	} else if msgType == SendDataMsgType {
 		n.serveSendData(msg)
+	} else if msgType == RequestInsertMsgType {
+		n.serveRequestInsert(msg)
+	} else if msgType == ReplyInsertMsgType {
+		n.serveReplyInsert(msg)
 	}
 }
 
@@ -134,10 +138,6 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 	return nodeResult.(*node)
 }
 
-func (n *node) routeExpire(msg nodeMsg) {
-
-}
-
 func (n *node) serveFail(msg nodeMsg) {
 	// Get job associated with this message
 	// If job has not been seen before or expired
@@ -147,18 +147,15 @@ func (n *node) serveFail(msg nodeMsg) {
 		return
 	}
 
-	// TODO: Additional behavior if htl is nonzero
-	// TODO: Additional behavior depengind on msgType
-
 	// If job has been seen and we receive a fail
 	// Forward it to the boss of this job
 	// If we are the boss of this job, drop it
 	if job.from == n {
 		log.Print("Deleted job")
-		n.deleteJob(msg)
 	} else {
-		n.send(msg, msg.from)
+		n.send(msg, job.from)
 	}
+	n.deleteJob(msg)
 }
 
 // No need to do fancy things like levenshtein as long as consistent

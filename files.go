@@ -2,11 +2,102 @@
 package main
 
 import (
+	"log"
 	"strings"
 )
 
 func (n *node) sendFileInsert(descr string, file string) {
+	_, _, ksk := genKeywordSignedKey(descr)
 
+	// Check self immediately
+	fileFound := n.hasFile(ksk)
+	if fileFound {
+		return
+	}
+
+	msg := n.newNodeMsg(RequestInsertMsgType, ksk)
+
+	// Add the job, proceed if there is processing space
+	if n.addJob(msg) {
+		// Get the job we just made to get routeNum
+		job := n.getJob(msg)
+		// Figure out who to send the job to
+		dst := n.getRoutingTableEntry(ksk, job.routeNum)
+		// If there is a node to send to, send it
+		if dst != nil {
+			n.send(msg, dst)
+		}
+	}
+}
+
+func (n *node) serveRequestInsert(msg nodeMsg) {
+	// The file key is in the body
+	ksk := msg.body
+	fileFound := n.hasFile(ksk)
+
+	// If file is found, return it
+	if fileFound {
+		file := n.getFile(ksk)
+		msg.body = ksk + " " + file
+		msg.msgType = SendDataMsgType
+		msg.htl = msg.depth
+		msg.depth = 0
+		n.send(msg, msg.from)
+		return
+	} else {
+		if !n.hasJob(msg) && !n.addJob(msg) {
+			// TODO: Not specified in paper
+			// Node cannot process the insert
+			// For now, send a fail
+			msg.msgType = FailMsgType
+			msg.htl = msg.depth
+			msg.depth = 0
+			n.send(msg, msg.from)
+			return
+		}
+		job := n.getJob(msg)
+		dst := n.getRoutingTableEntry(ksk, job.routeNum)
+		// If there is a node to send to, send it
+		if dst != nil {
+			n.send(msg, dst)
+		} else {
+			// TODO: Not specified in paper
+			// For now send a fail
+			msg.msgType = FailMsgType
+			msg.htl = msg.depth
+			msg.depth = 0
+			n.send(msg, job.from)
+			n.deleteJob(msg)
+			return
+		}
+	}
+}
+
+func (n *node) serveRequestInsertExpired(msg nodeMsg) {
+	// Insert request expired means we are good to insert
+	// Store the file
+	n.addFileFromMsg(msg)
+
+	// Send reply
+	msg.htl = msg.depth
+	msg.msgType = ReplyInsertMsgType
+	msg.depth = 0
+	n.send(msg, msg.from)
+}
+
+func (n *node) serveReplyInsert(msg nodeMsg) {
+	if n.hasJob(msg) {
+		// Store the file
+		job := n.getJob(msg)
+		n.addFileFromMsg(msg)
+		// Forward, if not self
+		if job.from == n {
+			log.Print("Deleted job")
+		} else {
+			n.send(msg, job.from)
+		}
+		n.deleteJob(msg)
+	}
 }
 
 // Sending a request
@@ -108,12 +199,17 @@ func (n *node) serveSendData(msg nodeMsg) {
 			n.send(msg, job.from)
 		}
 		// Cache this file
-		words := strings.Split(msg.body, " ")
-		key := words[0]
-		file := strings.Join(words[1:], " ")
-		n.addFile(key, file)
+		n.addFileFromMsg(msg)
 		n.deleteJob(msg)
 	}
+}
+
+// Add file, given a msg
+func (n *node) addFileFromMsg(msg nodeMsg) {
+	words := strings.Split(msg.body, " ")
+	key := words[0]
+	file := strings.Join(words[1:], " ")
+	n.addFile(key, file)
 }
 
 // Add file, given the key (KSK)

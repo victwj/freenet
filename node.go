@@ -18,7 +18,7 @@ const (
 	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
 	nodeJobTimeout      = 5
 	nodeJobCapacity     = 10
-	hopsToLiveDefault   = 5 // 20  // 5.1 pg.13
+	hopsToLiveDefault   = 3 // 20  // 5.1 pg.13
 )
 
 // Freenet node
@@ -140,8 +140,8 @@ func (n *node) addJob(msg nodeMsg) bool {
 	msgID := strconv.FormatUint(msg.msgID, 10)
 
 	// Job is in the processor but re adding it, error
-	_, found := n.processor.jobs.Get(msgID)
-	if found {
+	if n.hasJob(msg) {
+		fmt.Println("Error")
 		panic("Re-adding a job")
 	}
 

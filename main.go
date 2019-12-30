@@ -18,9 +18,12 @@ func main() {
 	// For now, testing things by adding things manually
 
 	// Add routing table entries
-	nodes[0].addRoutingTableEntry("cbb", nodes[1])
-	nodes[0].addRoutingTableEntry("cbbb", nodes[3])
-	nodes[1].addRoutingTableEntry("testkey", nodes[2])
+	nodes[0].addRoutingTableEntry("n1", nodes[1])
+	nodes[0].addRoutingTableEntry("76", nodes[2])
+	nodes[1].addRoutingTableEntry("n3", nodes[3])
+	nodes[2].addRoutingTableEntry("n4", nodes[4])
+	nodes[3].addRoutingTableEntry("n4", nodes[4])
+	nodes[4].addRoutingTableEntry("n3", nodes[3])
 
 	// Add a file
 	nodes[2].addFileDescr("/existing/file", "hello world")
@@ -30,8 +33,9 @@ func main() {
 	time.Sleep(1 * time.Second)
 
 	// Send a data request
-	nodes[0].sendRequestData("/nonexistent/file")
-	nodes[0].sendRequestData("/existing/file")
+	// nodes[0].sendRequestData("/nonexistent/file")
+	// nodes[0].sendRequestData("/existing/file")
+	nodes[0].sendFileInsert("/new/file", "test file")
 
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)

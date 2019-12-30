@@ -2,8 +2,11 @@ package main
 
 import (
 	"testing"
-	"time"
 )
+
+func TestFreenetBasic(t *testing.T) {
+
+}
 
 func TestJob(t *testing.T) {
 	n1 := newNode(5)
@@ -27,10 +30,10 @@ func TestJob(t *testing.T) {
 		t.Error("Deleted job still found")
 	}
 
-	n1.addJob(testMsg2)
-	time.Sleep(6 * time.Second)
-	b = n1.getJob(testMsg2)
-	if b != nil {
-		t.Error("Expired job still found")
-	}
+	// n1.addJob(testMsg2)
+	// time.Sleep(6 * time.Second)
+	// b = n1.getJob(testMsg2)
+	// if b != nil {
+	// 	t.Error("Expired job still found")
+	// }
 }
