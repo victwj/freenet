@@ -19,14 +19,14 @@ func main() {
 
 	// Add routing table entries
 	nodes[0].addRoutingTableEntry("n1", nodes[1])
-	nodes[0].addRoutingTableEntry("76", nodes[2])
+	nodes[0].addRoutingTableEntry("n2", nodes[2])
 	nodes[1].addRoutingTableEntry("n3", nodes[3])
 	nodes[2].addRoutingTableEntry("n4", nodes[4])
 	nodes[3].addRoutingTableEntry("n4", nodes[4])
 	nodes[4].addRoutingTableEntry("n3", nodes[3])
 
 	// Add a file
-	nodes[2].addFileDescr("/existing/file", "hello world")
+	nodes[4].addFileDescr("/existing/file", "hello world")
 	// "/existing/file KSK is cbbb589"
 
 	// Wait a little to let nodes stabilize
@@ -34,8 +34,8 @@ func main() {
 
 	// Send a data request
 	// nodes[0].sendRequestData("/nonexistent/file")
-	// nodes[0].sendRequestData("/existing/file")
-	nodes[0].sendFileInsert("/new/file", "test file")
+	nodes[0].sendRequestData("/existing/file")
+	// nodes[0].sendRequestInsert("/new/file", "test file")
 
 	// Wait a little to let nodes log
 	time.Sleep(2 * time.Second)

@@ -35,12 +35,14 @@ type node struct {
 - Finite forwarding probability of HTL/Depth == 1
 - Obfuscating depth by setting it randomly
 */
+
 type nodeMsg struct {
 	msgType uint8  // Type of message, see constants
 	msgID   uint64 // Unique ID, per transaction
 	htl     int    // Hops to live
 	depth   int    // To let packets backtrack successfully
 	from    *node  // Pointer to node which sent this msg
+	origin  *node  // The first node which started this transaction
 	body    string // String body, depends on msg type
 }
 
@@ -55,7 +57,8 @@ type nodeProcessor struct {
 // The data type of a pending job, stored in nodeProcessor
 // Save space, instead of storing an entire nodeMsg
 type nodeJob struct {
-	from     *node // Who sent this job
+	from     *node // Who sent this job to us
+	origin   *node // The origin of this job
 	routeNum int
 	// E.g. if routeNum == 1, we want to use the second match (0-indexed)
 	// This means the first match was previously unsuccessful
@@ -97,6 +100,7 @@ func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	m.from = n
 	m.body = body
 	m.depth = 0
+	m.origin = nil // Don't set if not necessary, safer
 	return *m
 }
 
@@ -149,6 +153,10 @@ func (n *node) addJob(msg nodeMsg) bool {
 	job := new(nodeJob)
 	job.from = msg.from
 	job.routeNum = 0
+
+	if msg.origin != nil {
+		job.origin = msg.origin
+	}
 
 	// Add to processor
 	n.processor.jobs.SetDefault(msgID, job)

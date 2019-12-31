@@ -31,12 +31,12 @@ const (
 
 	// Replies
 	ReplyInsertMsgType   = 20
-	ReplyNotFoundMsgType = 21
-	ReplyRestartMsgType  = 22
+	SendDataMsgType      = 21
+	ReplyNotFoundMsgType = 22
+	ReplyRestartMsgType  = 23
 
 	// Sends
-	SendDataMsgType   = 30
-	SendInsertMsgType = 31
+	// SendInsertMsgType = 31
 )
 
 func (n *node) route(msg nodeMsg) {
@@ -77,7 +77,8 @@ func (n *node) route(msg nodeMsg) {
 // Add entry to the routing table
 func (n *node) addRoutingTableEntry(key string, nodeEntry *node) {
 	if nodeEntry == n {
-		panic("Error: adding self to routing table")
+		return
+		// panic("Error: adding self to routing table")
 	}
 	n.table.Add(key, nodeEntry)
 }

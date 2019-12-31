@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (n *node) sendFileInsert(descr string, file string) {
+func (n *node) sendRequestInsert(descr string, file string) {
 	_, _, ksk := genKeywordSignedKey(descr)
 
 	// Check self immediately
@@ -16,6 +16,9 @@ func (n *node) sendFileInsert(descr string, file string) {
 	}
 
 	msg := n.newNodeMsg(RequestInsertMsgType, ksk)
+
+	// Set origin when requesting an insert
+	msg.origin = n
 
 	// Add the job, proceed if there is processing space
 	if n.addJob(msg) {
@@ -41,6 +44,7 @@ func (n *node) serveRequestInsert(msg nodeMsg) {
 		msg.body = ksk + " " + file
 		msg.msgType = SendDataMsgType
 		msg.htl = msg.depth
+		msg.origin = n
 		msg.depth = 0
 		n.send(msg, msg.from)
 		return
@@ -140,6 +144,7 @@ func (n *node) serveRequestData(msg nodeMsg) {
 		msg.msgType = SendDataMsgType
 		msg.htl = msg.depth
 		msg.depth = 0
+		msg.origin = n
 		n.send(msg, msg.from)
 		return
 	}
@@ -205,11 +210,18 @@ func (n *node) serveSendData(msg nodeMsg) {
 }
 
 // Add file, given a msg
+// Also adds to the routing table
 func (n *node) addFileFromMsg(msg nodeMsg) {
 	words := strings.Split(msg.body, " ")
 	key := words[0]
 	file := strings.Join(words[1:], " ")
 	n.addFile(key, file)
+	if msg.origin == nil {
+		panic("Adding nil origin to routing table")
+	}
+	if msg.origin != n {
+		n.addRoutingTableEntry(key, msg.origin)
+	}
 }
 
 // Add file, given the key (KSK)
