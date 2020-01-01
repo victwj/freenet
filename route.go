@@ -4,6 +4,7 @@ package main
 import (
 	"container/heap"
 	"log"
+	"math/rand"
 	"sort"
 )
 
@@ -33,7 +34,8 @@ const (
 	ReplyInsertMsgType   = 20
 	SendDataMsgType      = 21
 	ReplyNotFoundMsgType = 22
-	ReplyRestartMsgType  = 23
+	ReplyJoinMsgType     = 23
+	ReplyRestartMsgType  = 24
 
 	// Sends
 	// SendInsertMsgType = 31
@@ -71,6 +73,8 @@ func (n *node) route(msg nodeMsg) {
 		n.serveRequestInsert(msg)
 	} else if msgType == ReplyInsertMsgType {
 		n.serveReplyInsert(msg)
+	} else if msgType == ReplyJoinMsgType {
+		n.serveReplyJoin(msg)
 	}
 }
 
@@ -85,9 +89,19 @@ func (n *node) addRoutingTableEntry(key string, nodeEntry *node) {
 
 // Get the n-th match of the routing table, given a string to match
 func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
+	// Used for joins, special case
+	// Return a random node from th etable
+	if routeNum < 0 {
+		k := n.table.Keys()
+		randomKey := k[rand.Intn(len(k))]
+		randomNode, found := n.table.Peek(randomKey)
+		if !found {
+			panic("Random node generation is buggy")
+		}
+		return randomNode.(*node)
+	}
 
-	// Sanity check
-	if routeNum == 0 {
+	if routeNum <= 0 {
 		panic("routeNum is zero")
 	}
 

@@ -18,7 +18,7 @@ const (
 	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
 	nodeJobTimeout      = 5
 	nodeJobCapacity     = 10
-	hopsToLiveDefault   = 3 // 20  // 5.1 pg.13
+	hopsToLiveDefault   = 4 // 20  // 5.1 pg.13
 )
 
 // Freenet node
@@ -127,6 +127,9 @@ func (n *node) listen() {
 }
 
 func (n *node) send(msg nodeMsg, dst *node) {
+	if n == dst {
+		panic("Sending a message to self")
+	}
 	// We never want to forward the wrong from field
 	msg.from = n
 	dst.ch <- msg

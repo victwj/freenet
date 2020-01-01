@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+func testJoin() {
+
+}
+
 func main() {
 	// Slice containing all nodes
 	var nodes []*node
@@ -22,7 +26,7 @@ func main() {
 	nodes[0].addRoutingTableEntry("n2", nodes[2])
 	nodes[1].addRoutingTableEntry("n3", nodes[3])
 	nodes[2].addRoutingTableEntry("n4", nodes[4])
-	nodes[3].addRoutingTableEntry("n4", nodes[4])
+	nodes[3].addRoutingTableEntry("n0", nodes[0])
 	nodes[4].addRoutingTableEntry("n3", nodes[3])
 
 	// Add a file
@@ -34,13 +38,30 @@ func main() {
 
 	// Send a data request
 	// nodes[0].sendRequestData("/nonexistent/file")
-	nodes[0].sendRequestData("/existing/file")
+	// nodes[0].sendRequestData("/existing/file")
 	// nodes[0].sendRequestInsert("/new/file", "test file")
 
+	// time.Sleep(1 * time.Second)
+	// Print final state of nodes
+	// fmt.Println("\nFinal node states:")
+	// for _, n := range nodes {
+	// 	fmt.Println(n,
+	// 		"\n  Table:", n.table.Keys(),
+	// 		"\n  Disk:", n.disk.Keys(),
+	// 		"\n  Jobs:", n.processor.jobs.Items())
+	// }
+	// nodes[0].sendRequestData("/new/file")
+	// nodes[1].sendRequestJoin(nodes[0])
+
 	// Wait a little to let nodes log
-	time.Sleep(2 * time.Second)
+	// time.Sleep(2 * time.Second)
 
 	// Print final state of nodes
+
+	nodes[3].sendRequestJoin(nodes[0])
+
+	time.Sleep(3 * time.Second)
+
 	fmt.Println("\nFinal node states:")
 	for _, n := range nodes {
 		fmt.Println(n,
@@ -48,4 +69,5 @@ func main() {
 			"\n  Disk:", n.disk.Keys(),
 			"\n  Jobs:", n.processor.jobs.Items())
 	}
+
 }
