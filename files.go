@@ -2,7 +2,6 @@
 package main
 
 import (
-	"log"
 	"strings"
 )
 
@@ -15,7 +14,7 @@ func (n *node) sendRequestInsert(descr string, file string) {
 		return
 	}
 
-	msg := n.newNodeMsg(RequestInsertMsgType, ksk)
+	msg := n.newNodeMsg(RequestInsertMsgType, ksk+" "+file)
 
 	// Set origin when requesting an insert
 	msg.origin = n
@@ -33,9 +32,11 @@ func (n *node) sendRequestInsert(descr string, file string) {
 	}
 }
 
+// Currently prioritize reaching HTL of 0
+// Never return success for request insert if HTL is nonzero
 func (n *node) serveRequestInsert(msg nodeMsg) {
 	// The file key is in the body
-	ksk := msg.body
+	ksk, _ := parseFileFromMsg(msg)
 	fileFound := n.hasFile(ksk)
 
 	// If file is found, return it
@@ -95,9 +96,7 @@ func (n *node) serveReplyInsert(msg nodeMsg) {
 		job := n.getJob(msg)
 		n.addFileFromMsg(msg)
 		// Forward, if not self
-		if job.from == n {
-			log.Print("Deleted job")
-		} else {
+		if job.from != n {
 			n.send(msg, job.from)
 		}
 		n.deleteJob(msg)
@@ -209,12 +208,17 @@ func (n *node) serveSendData(msg nodeMsg) {
 	}
 }
 
-// Add file, given a msg
-// Also adds to the routing table
-func (n *node) addFileFromMsg(msg nodeMsg) {
+func parseFileFromMsg(msg nodeMsg) (string, string) {
 	words := strings.Split(msg.body, " ")
 	key := words[0]
 	file := strings.Join(words[1:], " ")
+	return key, file
+}
+
+// Add file, given a msg
+// Also adds to the routing table
+func (n *node) addFileFromMsg(msg nodeMsg) {
+	key, file := parseFileFromMsg(msg)
 	n.addFile(key, file)
 	if msg.origin == nil {
 		panic("Adding nil origin to routing table")
