@@ -45,5 +45,5 @@ func genEdKey(s string) (ed25519.PublicKey, ed25519.PrivateKey) {
 func genKeywordSignedKey(descr string) (ed25519.PublicKey, ed25519.PrivateKey, string) {
 	pub, priv := genEdKey(descr)
 	ksk := hashBytes(pub)
-	return pub, priv, ksk
+	return pub, priv, ksk[:10]
 }

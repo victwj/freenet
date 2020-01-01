@@ -46,7 +46,11 @@ func testBasic() {
 	time.Sleep(1 * time.Second)
 	printNodeStates(nodes)
 
-	nodes[0].sendRequestInsert("/my/file/hello.txt", "hello world")
+	nodes[1].sendRequestInsert("/my/file/hello.txt", "hello world")
+	time.Sleep(1 * time.Second)
+	printNodeStates(nodes)
+
+	nodes[4].sendRequestData("/my/file/hello.txt")
 	time.Sleep(1 * time.Second)
 	printNodeStates(nodes)
 

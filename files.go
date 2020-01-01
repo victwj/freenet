@@ -109,6 +109,10 @@ func (n *node) sendRequestData(descr string) {
 	_, _, ksk := genKeywordSignedKey(descr)
 	msg := n.newNodeMsg(RequestDataMsgType, ksk)
 
+	if n.hasFile(ksk) {
+		return
+	}
+
 	// Add the job, proceed if there is processing space
 	if n.addJob(msg) {
 		// Create the keyword signed key
