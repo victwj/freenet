@@ -76,9 +76,8 @@ func (n *node) serveRequestJoin(msg nodeMsg) {
 	if dst != nil {
 		n.send(msg, dst)
 	} else {
-		// TODO: Not specified in paper
-		// For now send a fail
-		msg.msgType = FailMsgType
+		// If there is no node to send to, send success
+		msg.msgType = ReplyJoinMsgType
 		msg.htl = msg.depth
 		msg.depth = 0
 		n.send(msg, job.from)
