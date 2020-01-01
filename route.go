@@ -93,6 +93,12 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 	// Return a random node from th etable
 	if routeNum < 0 {
 		k := n.table.Keys()
+
+		// Edge case where this node has nothing in routing table
+		if len(k) == 0 {
+			return nil
+		}
+
 		randomKey := k[rand.Intn(len(k))]
 		randomNode, found := n.table.Peek(randomKey)
 		if !found {

@@ -18,7 +18,7 @@ const (
 	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
 	nodeJobTimeout      = 5
 	nodeJobCapacity     = 10
-	hopsToLiveDefault   = 4 // 20  // 5.1 pg.13
+	hopsToLiveDefault   = 3 // 20  // 5.1 pg.13
 )
 
 // Freenet node
