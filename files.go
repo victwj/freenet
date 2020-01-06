@@ -135,6 +135,7 @@ func (n *Node) serveRequestData(msg nodeMsg) {
 	if n.hasJob(msg) {
 		msg.msgType = ReplyNotFoundMsgType
 		n.send(msg, msg.from)
+		return
 	}
 
 	// The file key is in the body
