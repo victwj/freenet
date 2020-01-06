@@ -70,7 +70,35 @@ func testBasic() {
 
 }
 
+// Test according to 3.2 pg.7 fig.1
+func testPaper() {
+	freenet.HopsToLiveDefault = 10
+	// Slice containing all nodes
+	var nodes []*freenet.Node
+
+	// Create 6 nodes
+	for i := uint32(0); i < 6; i++ {
+		nodes = append(nodes, freenet.NewNode(i))
+		nodes[i].Start()
+	}
+
+	nodes[0].AddRoutingTableEntry(nodes[1])
+	nodes[1].AddRoutingTableEntry(nodes[2])
+	nodes[1].AddRoutingTableEntry(nodes[4])
+	nodes[4].AddRoutingTableEntry(nodes[3])
+	nodes[4].AddRoutingTableEntry(nodes[5])
+	nodes[5].AddRoutingTableEntry(nodes[1])
+	nodes[3].AddFile("/test/myfile.txt", "Classified document")
+
+	time.Sleep(1 * time.Second)
+
+	nodes[0].SendRequestData("/test/myfile.txt")
+	time.Sleep(1 * time.Second)
+	printNodeStates(nodes)
+}
+
 func main() {
 	testBasic()
+	testPaper()
 	return
 }

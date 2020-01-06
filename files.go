@@ -243,6 +243,12 @@ func (n *Node) addFile(fileKey string, file string) {
 	n.disk.Add(fileKey, file)
 }
 
+// Add file, given the file descriptor and file content
+func (n *Node) AddFile(descr string, file string) {
+	_, _, key := genKeywordSignedKey(descr)
+	n.addFile(key, file)
+}
+
 // Return the file
 func (n *Node) getFile(fileKey string) string {
 	file, found := n.disk.Get(fileKey)

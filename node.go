@@ -14,6 +14,7 @@ import (
 )
 
 // Configuration constants
+
 var NodeChannelCapacity int = 5 // TODO: Decide on a value
 var NodeTableCapacity int = 5   // 250 // 5.1 pg.12
 var NodeFileCapacity int = 5    // 50 // 5.1 pg.12
@@ -198,7 +199,7 @@ func (n *Node) deleteJob(msg nodeMsg) {
 
 	// Log here for evaluations
 	// If the job's origin is us, then it's our request
-	if n.getJob(msg).origin == n {
+	if n.hasJob(msg) && n.getJob(msg).origin == n {
 		log.Println(n, "completed job", msg.msgID, "with code", msg.msgType)
 		result := make(map[string]uint64)
 		result["nodeID"] = uint64(n.id)
@@ -214,6 +215,7 @@ func (n *Node) deleteJob(msg nodeMsg) {
 	n.processor.jobs.Delete(msgID)
 }
 
+// String representation useful to debug small nodes
 func (n *Node) Print() {
 	fmt.Println(
 		"Node ", n.id,
