@@ -74,7 +74,9 @@ func (n *Node) serveRequestInsert(msg nodeMsg) {
 			msg.msgType = FailMsgType
 			msg.htl = msg.depth
 			msg.depth = 0
-			n.send(msg, job.from)
+			if n != job.from {
+				n.send(msg, job.from)
+			}
 			n.deleteJob(msg)
 			return
 		}
@@ -177,7 +179,9 @@ func (n *Node) serveRequestData(msg nodeMsg) {
 		// We can't forward it
 		// Delete the job and give up
 		msg.msgType = ReplyNotFoundMsgType
-		n.send(msg, job.from)
+		if job.from != n {
+			n.send(msg, job.from)
+		}
 		n.deleteJob(msg)
 	}
 }
