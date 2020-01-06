@@ -134,7 +134,10 @@ func (n *Node) send(msg nodeMsg, dst *Node) {
 	// We never want to forward the wrong from field
 	msg.from = n
 	// Add the length of message
-	msg.length += 1
+	// Length is defined as number of hops taken before reaching data
+	if msg.msgType != SendDataMsgType {
+		msg.length += 1
+	}
 	dst.ch <- msg
 }
 
