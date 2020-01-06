@@ -57,12 +57,26 @@ func (n *Node) route(msg nodeMsg) {
 			n.serveRequestInsertExpired(msg)
 			return
 		}
-		// Send fail to origin
+		// DEPRECIATED Send fail to origin
+		// msg.msgType = FailMsgType
+		// msg.htl = 1
+		// msg.depth = 0
+		// if msg.origin != n {
+		// 	n.send(msg, msg.origin)
+		// }
+		// n.deleteJob(msg)
+
+		// Instead, send fail in a propagatory way
+		// So that the jobs get freed up
 		msg.msgType = FailMsgType
-		msg.htl = 1
+		msg.htl = msg.depth
 		msg.depth = 0
 		if msg.origin != n {
-			n.send(msg, msg.origin)
+			if n.hasJob(msg) {
+				n.send(msg, n.getJob(msg).from)
+			} else {
+				n.send(msg, msg.from)
+			}
 		}
 		n.deleteJob(msg)
 		return
