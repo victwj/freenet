@@ -2,7 +2,9 @@
 package freenet
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
@@ -193,12 +195,23 @@ func (n *Node) getJob(msg nodeMsg) *nodeJob {
 }
 
 func (n *Node) deleteJob(msg nodeMsg) {
+
+	// Log here for evaluations
+	// If the job's origin is us, then it's our request
+	if n.getJob(msg).origin == n {
+		log.Println(n, "completed job", msg.msgID, "with code", msg.msgType)
+		result := make(map[string]uint64)
+		result["nodeID"] = uint64(n.id)
+		result["msgID"] = msg.msgID
+		result["length"] = uint64(msg.length)
+		result["code"] = uint64(msg.msgType)
+		s, _ := json.Marshal(result)
+		log.Println(string(s))
+	}
+
+	// Delete the job
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	n.processor.jobs.Delete(msgID)
-	// _, found := n.processor.jobs.Get(msgID)
-	// if found {
-	// 	n.processor.jobs.Delete(msgID)
-	// }
 }
 
 func (n *Node) Print() {
