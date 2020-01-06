@@ -1,11 +1,12 @@
 // Functions related to inserting/removing files
-package main
+package freenet
 
 import (
 	"strings"
 )
 
-func (n *node) sendRequestInsert(descr string, file string) {
+// Send a request to insert a given file and file descriptor
+func (n *Node) SendRequestInsert(descr string, file string) {
 	_, _, ksk := genKeywordSignedKey(descr)
 
 	// Check self immediately
@@ -25,7 +26,7 @@ func (n *node) sendRequestInsert(descr string, file string) {
 		job := n.getJob(msg)
 		// Figure out who to send the job to
 		dst := n.getRoutingTableEntry(ksk, job.routeNum)
-		// If there is a node to send to, send it
+		// If there is a Node to send to, send it
 		if dst != nil {
 			n.send(msg, dst)
 		}
@@ -34,7 +35,7 @@ func (n *node) sendRequestInsert(descr string, file string) {
 
 // Currently prioritize reaching HTL of 0
 // Never return success for request insert if HTL is nonzero
-func (n *node) serveRequestInsert(msg nodeMsg) {
+func (n *Node) serveRequestInsert(msg nodeMsg) {
 	// The file key is in the body
 	ksk, _ := parseFileFromMsg(msg)
 	fileFound := n.hasFile(ksk)
@@ -62,7 +63,7 @@ func (n *node) serveRequestInsert(msg nodeMsg) {
 		}
 		job := n.getJob(msg)
 		dst := n.getRoutingTableEntry(ksk, job.routeNum)
-		// If there is a node to send to, send it
+		// If there is a Node to send to, send it
 		if dst != nil {
 			n.send(msg, dst)
 		} else {
@@ -78,7 +79,7 @@ func (n *node) serveRequestInsert(msg nodeMsg) {
 	}
 }
 
-func (n *node) serveRequestInsertExpired(msg nodeMsg) {
+func (n *Node) serveRequestInsertExpired(msg nodeMsg) {
 	// Insert request expired means we are good to insert
 	// Store the file
 	n.addFileFromMsg(msg)
@@ -90,7 +91,7 @@ func (n *node) serveRequestInsertExpired(msg nodeMsg) {
 	n.send(msg, msg.from)
 }
 
-func (n *node) serveReplyInsert(msg nodeMsg) {
+func (n *Node) serveReplyInsert(msg nodeMsg) {
 	if n.hasJob(msg) {
 		// Store the file
 		job := n.getJob(msg)
@@ -103,8 +104,8 @@ func (n *node) serveReplyInsert(msg nodeMsg) {
 	}
 }
 
-// Sending a request
-func (n *node) sendRequestData(descr string) {
+// Send a request fora file with the given file descriptor
+func (n *Node) SendRequestData(descr string) {
 
 	_, _, ksk := genKeywordSignedKey(descr)
 	msg := n.newNodeMsg(RequestDataMsgType, ksk)
@@ -121,14 +122,14 @@ func (n *node) sendRequestData(descr string) {
 		job := n.getJob(msg)
 		// Figure out who to send the job to
 		dst := n.getRoutingTableEntry(ksk, job.routeNum)
-		// If there is a node to send to, send it
+		// If there is a Node to send to, send it
 		if dst != nil {
 			n.send(msg, dst)
 		}
 	}
 }
 
-func (n *node) serveRequestData(msg nodeMsg) {
+func (n *Node) serveRequestData(msg nodeMsg) {
 	// If we get a requestData that we've already seen, refuse
 	// Prevent loops
 	if n.hasJob(msg) {
@@ -164,7 +165,7 @@ func (n *node) serveRequestData(msg nodeMsg) {
 	// Forward the request for the file since we don't have it
 	job := n.getJob(msg)
 	dst := n.getRoutingTableEntry(ksk, job.routeNum)
-	// If there is a node to send to, send it
+	// If there is a Node to send to, send it
 	if dst != nil {
 		n.send(msg, dst)
 	} else {
@@ -176,7 +177,7 @@ func (n *node) serveRequestData(msg nodeMsg) {
 	}
 }
 
-func (n *node) serveReplyNotFound(msg nodeMsg) {
+func (n *Node) serveReplyNotFound(msg nodeMsg) {
 	// We received a file not found
 	if n.hasJob(msg) {
 		job := n.getJob(msg)
@@ -199,7 +200,7 @@ func (n *node) serveReplyNotFound(msg nodeMsg) {
 }
 
 // We received a file we wanted
-func (n *node) serveSendData(msg nodeMsg) {
+func (n *Node) serveSendData(msg nodeMsg) {
 	if n.hasJob(msg) {
 		job := n.getJob(msg)
 		// Only forward if we did not start off this whole request
@@ -221,7 +222,7 @@ func parseFileFromMsg(msg nodeMsg) (string, string) {
 
 // Add file, given a msg
 // Also adds to the routing table
-func (n *node) addFileFromMsg(msg nodeMsg) {
+func (n *Node) addFileFromMsg(msg nodeMsg) {
 	key, file := parseFileFromMsg(msg)
 	n.addFile(key, file)
 	if msg.origin == nil {
@@ -233,12 +234,12 @@ func (n *node) addFileFromMsg(msg nodeMsg) {
 }
 
 // Add file, given the key (KSK)
-func (n *node) addFile(fileKey string, file string) {
+func (n *Node) addFile(fileKey string, file string) {
 	n.disk.Add(fileKey, file)
 }
 
 // Return the file
-func (n *node) getFile(fileKey string) string {
+func (n *Node) getFile(fileKey string) string {
 	file, found := n.disk.Get(fileKey)
 	if !found {
 		panic("Getting file that does not exist")
@@ -248,14 +249,14 @@ func (n *node) getFile(fileKey string) string {
 }
 
 // Check if file exists in disk
-func (n *node) hasFile(fileKey string) bool {
+func (n *Node) hasFile(fileKey string) bool {
 	_, found := n.disk.Peek(fileKey)
 	return found
 
 }
 
 // Add file based on raw descriptor, more useful for tests
-func (n *node) addFileDescr(descr string, file string) {
+func (n *Node) addFileDescr(descr string, file string) {
 	_, _, fileKey := genKeywordSignedKey(descr)
 	n.disk.Add(fileKey, file)
 }

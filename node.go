@@ -1,8 +1,8 @@
-package main
+// Functions implementing a node in freenet
+package freenet
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"strconv"
 	"time"
@@ -21,8 +21,8 @@ const (
 	hopsToLiveDefault   = 3 // 20  // 5.1 pg.13
 )
 
-// Freenet node
-type node struct {
+// Node data structure in freenet
+type Node struct {
 	id        uint32         // Unique ID per node
 	ch        chan nodeMsg   // The "IP/port" of the node
 	table     *lru.Cache     // Routing table, string->*node
@@ -41,8 +41,8 @@ type nodeMsg struct {
 	msgID   uint64 // Unique ID, per transaction
 	htl     int    // Hops to live
 	depth   int    // To let packets backtrack successfully
-	from    *node  // Pointer to node which sent this msg
-	origin  *node  // The first node which started this transaction
+	from    *Node  // Pointer to Node which sent this msg
+	origin  *Node  // The first Node which started this transaction
 	body    string // String body, depends on msg type
 }
 
@@ -57,16 +57,16 @@ type nodeProcessor struct {
 // The data type of a pending job, stored in nodeProcessor
 // Save space, instead of storing an entire nodeMsg
 type nodeJob struct {
-	from     *node // Who sent this job to us
-	origin   *node // The origin of this job
+	from     *Node // Who sent this job to us
+	origin   *Node // The origin of this job
 	routeNum int
 	// E.g. if routeNum == 1, we want to use the second match (0-indexed)
 	// This means the first match was previously unsuccessful
 }
 
-// String conversion for logging
-func (n node) String() string {
-	return fmt.Sprintf("Node %d", n.id)
+// String representation of a node for logging/debugging
+func (n Node) String() string {
+	return fmt.Sprint("Node", n.id)
 }
 
 // String conversion for logging
@@ -74,9 +74,9 @@ func (m nodeMsg) String() string {
 	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Depth: %d, Body: %s)", m.msgID, m.from.id, m.msgType, m.htl, m.depth, m.body)
 }
 
-// Factory function, Golang doesn't have constructors
-func newNode(id uint32) *node {
-	n := new(node)
+// Returns a pointer to an initialized node with the given ID
+func NewNode(id uint32) *Node {
+	n := new(Node)
 	n.id = id
 	n.ch = make(chan nodeMsg, nodeChannelCapacity)
 	n.table, _ = lru.New(nodeTableCapacity)
@@ -89,10 +89,10 @@ func newNode(id uint32) *node {
 	return n
 }
 
-// Factory for node messages
-// Member function of node, since we need a reference to sender
+// Factory for Node messages
+// Member function of Node, since we need a reference to sender
 // Don't return pointer since we never really work with pointer to msg
-func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
+func (n *Node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	m := new(nodeMsg)
 	m.msgType = msgType
 	m.msgID = rand.Uint64() // Random number for msg ID
@@ -104,29 +104,26 @@ func (n *node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	return *m
 }
 
-// Core functions of a node, emulating primitive operations
+// Core functions of a Node, emulating primitive operations
 
-func (n *node) start() {
-	log.Println(n, "started")
+// Spawn a goroutine which will handle/route messages sent to this node
+func (n *Node) Start() {
 	go n.listen()
 }
 
-func (n *node) stop() {
+// This node will no longer handle/route any message
+func (n *Node) Stop() {
 	close(n.ch)
 }
 
-func (n *node) listen() {
-	log.Println(n, "listening")
-
+func (n *Node) listen() {
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
 		n.route(msg)
 	}
-
-	log.Println(n, "done")
 }
 
-func (n *node) send(msg nodeMsg, dst *node) {
+func (n *Node) send(msg nodeMsg, dst *Node) {
 	if n == dst {
 		panic("Sending a message to self")
 	}
@@ -138,7 +135,7 @@ func (n *node) send(msg nodeMsg, dst *node) {
 // Adds job to process
 // The job cache is a map of msgID/xactID -> *nodeJob
 // Return true if success, false otherwise
-func (n *node) addJob(msg nodeMsg) bool {
+func (n *Node) addJob(msg nodeMsg) bool {
 	// Processor is full
 	if n.processor.jobs.ItemCount() >= n.processor.capacity {
 		return false
@@ -168,7 +165,7 @@ func (n *node) addJob(msg nodeMsg) bool {
 }
 
 // Check if this job exists
-func (n *node) hasJob(msg nodeMsg) bool {
+func (n *Node) hasJob(msg nodeMsg) bool {
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	_, found := n.processor.jobs.Get(msgID)
 	return found
@@ -177,7 +174,7 @@ func (n *node) hasJob(msg nodeMsg) bool {
 // If job exists in processor, return the nodeJob, increment routeNum
 // If it doesn't exist, return nil
 // !!! Note: This getter changes state
-func (n *node) getJob(msg nodeMsg) *nodeJob {
+func (n *Node) getJob(msg nodeMsg) *nodeJob {
 	msgID := strconv.FormatUint(msg.msgID, 10)
 
 	// Check if this job exists in processor
@@ -192,10 +189,18 @@ func (n *node) getJob(msg nodeMsg) *nodeJob {
 	return nil
 }
 
-func (n *node) deleteJob(msg nodeMsg) {
+func (n *Node) deleteJob(msg nodeMsg) {
 	msgID := strconv.FormatUint(msg.msgID, 10)
 	_, found := n.processor.jobs.Get(msgID)
 	if found {
 		n.processor.jobs.Delete(msgID)
 	}
+}
+
+func (n *Node) Print() {
+	fmt.Println(
+		"Node ", n.id,
+		"\n  Table:", n.table.Keys(),
+		"\n  Disk:", n.disk.Keys(),
+		"\n  Jobs:", n.processor.jobs.Items())
 }

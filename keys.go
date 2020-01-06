@@ -1,5 +1,5 @@
 // Functions related to generating/manipulating cryptographic keys
-package main
+package freenet
 
 import (
 	"crypto/ed25519"

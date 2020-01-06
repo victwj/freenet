@@ -1,8 +1,9 @@
 // Functions related to routing and handling messages
-package main
+package freenet
 
 import (
 	"container/heap"
+	"fmt"
 	"log"
 	"math/rand"
 	"sort"
@@ -21,7 +22,7 @@ const (
 	Send.Insert = contains the data
 	*/
 
-	// Temporary: generic fail message to abort the task
+	// Generic fail message to abort the task
 	FailMsgType = 0
 
 	// Requests
@@ -41,7 +42,7 @@ const (
 	// SendInsertMsgType = 31
 )
 
-func (n *node) route(msg nodeMsg) {
+func (n *Node) route(msg nodeMsg) {
 	log.Println(n, "received", msg)
 
 	// Decrement HTL
@@ -78,23 +79,29 @@ func (n *node) route(msg nodeMsg) {
 	}
 }
 
+// Add a Node to this node's routing table
+func (n *Node) AddRoutingTableEntry(nodeEntry *Node) {
+	idStr := fmt.Sprint(nodeEntry.id)
+	_, _, idKey := genKeywordSignedKey(idStr)
+	n.addRoutingTableEntry(idKey, nodeEntry)
+}
+
 // Add entry to the routing table
-func (n *node) addRoutingTableEntry(key string, nodeEntry *node) {
+func (n *Node) addRoutingTableEntry(key string, nodeEntry *Node) {
 	if nodeEntry == n {
-		return
-		// panic("Error: adding self to routing table")
+		panic("Error: adding self to routing table")
 	}
 	n.table.Add(key, nodeEntry)
 }
 
 // Get the n-th match of the routing table, given a string to match
-func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
+func (n *Node) getRoutingTableEntry(match string, routeNum int) *Node {
 	// Used for joins, special case
-	// Return a random node from th etable
+	// Return a random Node from th etable
 	if routeNum < 0 {
 		k := n.table.Keys()
 
-		// Edge case where this node has nothing in routing table
+		// Edge case where this Node has nothing in routing table
 		if len(k) == 0 {
 			return nil
 		}
@@ -102,9 +109,9 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 		randomKey := k[rand.Intn(len(k))]
 		randomNode, found := n.table.Peek(randomKey)
 		if !found {
-			panic("Random node generation is buggy")
+			panic("Random Node generation is buggy")
 		}
-		return randomNode.(*node)
+		return randomNode.(*Node)
 	}
 
 	if routeNum <= 0 {
@@ -114,7 +121,7 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 	// Match immediately
 	if routeNum == 1 && n.table.Contains(match) {
 		result, _ := n.table.Get(match)
-		return result.(*node)
+		return result.(*Node)
 	}
 	// Return nil immediately
 	if routeNum > n.table.Len() {
@@ -122,7 +129,7 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 	}
 
 	// Calculate all string similarities and put in a PQ
-	pq := make(PriorityQueue, n.table.Len())
+	pq := make(priorityQueue, n.table.Len())
 	tableKeys := n.table.Keys()
 
 	// TODO: Sort will make this operation more stable but inefficient
@@ -139,7 +146,7 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 
 	for i, key := range tableKeys {
 		keyStr := key.(string)
-		pq[i] = &Item{
+		pq[i] = &item{
 			value:    keyStr,
 			priority: stringSimilarity(match, keyStr),
 			index:    i,
@@ -150,16 +157,16 @@ func (n *node) getRoutingTableEntry(match string, routeNum int) *node {
 	// Pop the PQ routeNum number of times
 	keyResult := ""
 	for routeNum > 0 {
-		keyResult = heap.Pop(&pq).(*Item).value
+		keyResult = heap.Pop(&pq).(*item).value
 		routeNum--
 	}
 
 	// Return it
 	nodeResult, _ := n.table.Get(keyResult)
-	return nodeResult.(*node)
+	return nodeResult.(*Node)
 }
 
-func (n *node) serveFail(msg nodeMsg) {
+func (n *Node) serveFail(msg nodeMsg) {
 	// Get job associated with this message
 	// If job has not been seen before or expired
 	// Fail message means nothing, drop it
