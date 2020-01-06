@@ -11,15 +11,13 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
-const (
-	// Configuration constants
-	nodeChannelCapacity = 5 // TODO: Decide on a value
-	nodeTableCapacity   = 5 // 250 // 5.1 pg.12
-	nodeFileCapacity    = 5 // 50 // 5.1 pg.12
-	nodeJobTimeout      = 5
-	nodeJobCapacity     = 10
-	hopsToLiveDefault   = 3 // 20  // 5.1 pg.13
-)
+// Configuration constants
+var NodeChannelCapacity int = 5 // TODO: Decide on a value
+var NodeTableCapacity int = 5   // 250 // 5.1 pg.12
+var NodeFileCapacity int = 5    // 50 // 5.1 pg.12
+var NodeJobTimeout int = 5
+var NodeJobCapacity int = 10
+var HopsToLiveDefault int = 3 // 20  // 5.1 pg.13
 
 // Node data structure in freenet
 type Node struct {
@@ -78,14 +76,14 @@ func (m nodeMsg) String() string {
 func NewNode(id uint32) *Node {
 	n := new(Node)
 	n.id = id
-	n.ch = make(chan nodeMsg, nodeChannelCapacity)
-	n.table, _ = lru.New(nodeTableCapacity)
-	n.disk, _ = lru.New(nodeFileCapacity)
+	n.ch = make(chan nodeMsg, NodeChannelCapacity)
+	n.table, _ = lru.New(NodeTableCapacity)
+	n.disk, _ = lru.New(NodeFileCapacity)
 
 	// Initialize processor
 	n.processor = new(nodeProcessor)
-	n.processor.jobs = cache.New(nodeJobTimeout*time.Second, (nodeJobTimeout+1)*time.Second)
-	n.processor.capacity = nodeJobCapacity
+	n.processor.jobs = cache.New(time.Duration(NodeJobTimeout)*time.Second, (time.Duration(NodeJobTimeout)+1)*time.Second)
+	n.processor.capacity = NodeJobCapacity
 	return n
 }
 
@@ -96,7 +94,7 @@ func (n *Node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	m := new(nodeMsg)
 	m.msgType = msgType
 	m.msgID = rand.Uint64() // Random number for msg ID
-	m.htl = hopsToLiveDefault
+	m.htl = HopsToLiveDefault
 	m.from = n
 	m.body = body
 	m.depth = 0
@@ -191,10 +189,11 @@ func (n *Node) getJob(msg nodeMsg) *nodeJob {
 
 func (n *Node) deleteJob(msg nodeMsg) {
 	msgID := strconv.FormatUint(msg.msgID, 10)
-	_, found := n.processor.jobs.Get(msgID)
-	if found {
-		n.processor.jobs.Delete(msgID)
-	}
+	n.processor.jobs.Delete(msgID)
+	// _, found := n.processor.jobs.Get(msgID)
+	// if found {
+	// 	n.processor.jobs.Delete(msgID)
+	// }
 }
 
 func (n *Node) Print() {

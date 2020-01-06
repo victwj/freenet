@@ -52,10 +52,17 @@ func (n *Node) route(msg nodeMsg) {
 
 	// Hops to live too low
 	if msg.htl < 0 {
-		// Special case
+		// Special case for inserts
 		if msg.msgType == RequestInsertMsgType {
 			n.serveRequestInsertExpired(msg)
+			return
 		}
+		// Send fail to origin
+		msg.msgType = FailMsgType
+		msg.htl = msg.depth
+		msg.depth = 0
+		n.send(msg, msg.origin)
+		n.deleteJob(msg)
 		return
 	}
 
@@ -170,16 +177,16 @@ func (n *Node) serveFail(msg nodeMsg) {
 	// Get job associated with this message
 	// If job has not been seen before or expired
 	// Fail message means nothing, drop it
-	job := n.getJob(msg)
-	if job == nil {
+	if !n.hasJob(msg) {
 		return
 	}
 
+	job := n.getJob(msg)
 	// If job has been seen and we receive a fail
 	// Forward it to the boss of this job
 	// If we are the boss of this job, drop it
 	if job.from == n {
-		log.Print("Deleted job")
+		// log.Print("Deleted job")
 	} else {
 		n.send(msg, job.from)
 	}

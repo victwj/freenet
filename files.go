@@ -109,6 +109,7 @@ func (n *Node) SendRequestData(descr string) {
 
 	_, _, ksk := genKeywordSignedKey(descr)
 	msg := n.newNodeMsg(RequestDataMsgType, ksk)
+	msg.origin = n
 
 	if n.hasFile(ksk) {
 		return
