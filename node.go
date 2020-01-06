@@ -39,6 +39,7 @@ type nodeMsg struct {
 	msgID   uint64 // Unique ID, per transaction
 	htl     int    // Hops to live
 	depth   int    // To let packets backtrack successfully
+	length  int    // For evaluation, length this msg traveled
 	from    *Node  // Pointer to Node which sent this msg
 	origin  *Node  // The first Node which started this transaction
 	body    string // String body, depends on msg type
@@ -69,7 +70,8 @@ func (n Node) String() string {
 
 // String conversion for logging
 func (m nodeMsg) String() string {
-	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Depth: %d, Body: %s)", m.msgID, m.from.id, m.msgType, m.htl, m.depth, m.body)
+	return fmt.Sprintf("(MsgID: %d, From: %d, Type: %d, HTL: %d, Depth: %d, Length: %d, Body: %s)",
+		m.msgID, m.from.id, m.msgType, m.htl, m.depth, m.length, m.body)
 }
 
 // Returns a pointer to an initialized node with the given ID
@@ -98,6 +100,7 @@ func (n *Node) newNodeMsg(msgType uint8, body string) nodeMsg {
 	m.from = n
 	m.body = body
 	m.depth = 0
+	m.length = 0
 	m.origin = nil // Don't set if not necessary, safer
 	return *m
 }
@@ -127,6 +130,8 @@ func (n *Node) send(msg nodeMsg, dst *Node) {
 	}
 	// We never want to forward the wrong from field
 	msg.from = n
+	// Add the length of message
+	msg.length += 1
 	dst.ch <- msg
 }
 

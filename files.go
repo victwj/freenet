@@ -2,11 +2,13 @@
 package freenet
 
 import (
+	"log"
 	"strings"
 )
 
 // Send a request to insert a given file and file descriptor
 func (n *Node) SendRequestInsert(descr string, file string) {
+	log.Println(n, "sending RequestInsert")
 	_, _, ksk := genKeywordSignedKey(descr)
 
 	// Check self immediately
@@ -106,6 +108,7 @@ func (n *Node) serveReplyInsert(msg nodeMsg) {
 
 // Send a request fora file with the given file descriptor
 func (n *Node) SendRequestData(descr string) {
+	log.Println(n, "sending RequestData")
 
 	_, _, ksk := genKeywordSignedKey(descr)
 	msg := n.newNodeMsg(RequestDataMsgType, ksk)

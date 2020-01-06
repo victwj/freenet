@@ -59,7 +59,7 @@ func (n *Node) route(msg nodeMsg) {
 		}
 		// Send fail to origin
 		msg.msgType = FailMsgType
-		msg.htl = msg.depth
+		msg.htl = 1
 		msg.depth = 0
 		n.send(msg, msg.origin)
 		n.deleteJob(msg)
