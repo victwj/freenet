@@ -138,7 +138,14 @@ func (n *Node) send(msg nodeMsg, dst *Node) {
 	if msg.msgType != SendDataMsgType {
 		msg.length += 1
 	}
-	dst.ch <- msg
+
+	// Non blocking send
+	select {
+	case dst.ch <- msg:
+	default:
+		log.Println(n, "cannot send", msg)
+	}
+	// dst.ch <- msg
 }
 
 // Adds job to process
