@@ -4,7 +4,6 @@ package freenet
 import (
 	"container/heap"
 	"fmt"
-	"log"
 	"math/rand"
 	"sort"
 )
@@ -43,7 +42,7 @@ const (
 )
 
 func (n *Node) route(msg nodeMsg) {
-	log.Println(n, "received", msg)
+	// log.Println(n, "received", msg)
 
 	// Decrement HTL
 	msg.htl -= 1

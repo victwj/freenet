@@ -3,12 +3,11 @@ package freenet
 
 import (
 	"fmt"
-	"log"
 )
 
 // Send a request to join freenet to a node
 func (n *Node) SendRequestJoin(dst *Node) {
-	log.Println(n, "sending RequestJoin")
+	// log.Println(n, "sending RequestJoin")
 
 	// Add routing table entry for the Node we are sending to
 	dstIdStr := fmt.Sprint(dst.id)
