@@ -197,7 +197,7 @@ func (n *Node) getJob(msg nodeMsg) *nodeJob {
 	if found {
 		job := val.(*nodeJob)
 		// Increment the routeNum
-		job.routeNum += 1
+		job.routeNum++
 		n.processor.jobs.SetDefault(msgID, job)
 		return job
 	}
