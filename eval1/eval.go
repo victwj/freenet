@@ -10,19 +10,19 @@ import (
 )
 
 func init() {
-	freenet.NodeChannelCapacity = 5 // ?
-	freenet.NodeTableCapacity = 250 // 5.1 pg.12
-	freenet.NodeFileCapacity = 50   // 5.1 pg.12
-	freenet.NodeJobTimeout = 5      // ? seconds
-	freenet.NodeJobCapacity = 10    // ?
-	freenet.HopsToLiveDefault = 20  // 5.1 pg.13
+	freenet.NodeChannelCapacity = 100 // ? 5
+	freenet.NodeTableCapacity = 250   // 5.1 pg.12
+	freenet.NodeFileCapacity = 50     // 5.1 pg.12
+	freenet.NodeJobTimeout = 5        // ? seconds
+	freenet.NodeJobCapacity = 100     // ? 10
+	freenet.HopsToLiveDefault = 20    // 5.1 pg.13
 }
 
 func main() {
 
-	var NodeCount uint32 = 10         // 1000
-	var ActionsPerTimestep int = 10   // ?
-	var SimulationDuration int = 2000 // 5000
+	var NodeCount uint32 = 100        // 1000
+	var ActionsPerTimestep int = 1    // ?
+	var SimulationDuration int = 5000 // 5000
 
 	// Slice containing all nodes
 	var nodes []*freenet.Node
@@ -65,12 +65,14 @@ func main() {
 				fileDesc := "files/file" + strconv.Itoa(FileCount)
 				// fmt.Println("Insert: ", fileDesc)
 				nodes[srcNodeID].SendRequestInsert(fileDesc, "Inserted new file")
+				time.Sleep(1 * time.Millisecond)
 			} else if FileCount >= 0 {
 				// Retrieve file
 				fileID := rand.Intn(FileCount)
 				fileDesc := "files/file" + strconv.Itoa(fileID)
 				// fmt.Println("Retrieve: ", fileDesc)
 				nodes[srcNodeID].SendRequestData(fileDesc)
+				time.Sleep(1 * time.Millisecond)
 			}
 		}
 
@@ -83,6 +85,7 @@ func main() {
 				fileDesc := "files/file" + strconv.Itoa(fileID)
 				srcNodeID := rand.Intn(int(NodeCount))
 				nodes[srcNodeID].SendRequestData(fileDesc)
+				time.Sleep(1 * time.Millisecond)
 			}
 			fmt.Println("End Snapshot")
 			freenet.HopsToLiveDefault = 20
