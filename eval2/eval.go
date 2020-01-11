@@ -60,7 +60,7 @@ func main() {
 
 		// Actions every timestep
 		for j := 0; j < ActionsPerTimestep; j++ {
-			srcNodeID := rand.Intn(int(NodeCount))
+			srcNodeID := rand.Intn(int(currNodeCount))
 			if rand.Intn(2) == 0 {
 				// Insert file
 				FileCount++
