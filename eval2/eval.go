@@ -20,9 +20,11 @@ func init() {
 
 func main() {
 
-	var NodeCount uint32 = 10         // 1000
+	var NodeCount uint32 = 20         // 20
 	var ActionsPerTimestep int = 10   // ?
-	var SimulationDuration int = 2000 // 5000
+	var SimulationDuration int = 2000 // 200,000/5 = 40,000
+
+	var currNodeCount int = int(NodeCount)
 
 	// Slice containing all nodes
 	var nodes []*freenet.Node
@@ -67,25 +69,28 @@ func main() {
 				nodes[srcNodeID].SendRequestInsert(fileDesc, "Inserted new file")
 			} else if FileCount >= 0 {
 				// Retrieve file
+				freenet.HopsToLiveDefault = 500
 				fileID := rand.Intn(FileCount)
 				fileDesc := "files/file" + strconv.Itoa(fileID)
 				// fmt.Println("Retrieve: ", fileDesc)
 				nodes[srcNodeID].SendRequestData(fileDesc)
+				freenet.HopsToLiveDefault = 20
 			}
 		}
 
-		// Snapshots every 100 timesteps
-		if i%100 == 0 {
-			freenet.HopsToLiveDefault = 500
-			fmt.Println("Start Snapshot")
-			for j := 0; j < 300; j++ {
-				fileID := rand.Intn(FileCount)
-				fileDesc := "files/file" + strconv.Itoa(fileID)
-				srcNodeID := rand.Intn(int(NodeCount))
-				nodes[srcNodeID].SendRequestData(fileDesc)
-			}
-			fmt.Println("End Snapshot")
+		// New node addition every 5 timesteps
+		if i%5 == 0 {
+			nodes = append(nodes, freenet.NewNode(uint32(currNodeCount)))
+			nodes[uint32(currNodeCount)].Start()
+
+			freenet.HopsToLiveDefault = 10
+			dstID := rand.Intn(currNodeCount)
+			nodes[uint32(currNodeCount)].SendRequestJoin(nodes[dstID])
+			time.Sleep(1 * time.Millisecond)
+
 			freenet.HopsToLiveDefault = 20
+			currNodeCount++
+			fmt.Println("Node count", currNodeCount, "added")
 		}
 	}
 
