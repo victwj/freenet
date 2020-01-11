@@ -20,30 +20,30 @@ func init() {
 
 func main() {
 
-	var NodeCount uint32 = 20         // 20
+	var InitialNodeCount uint32 = 20  // 20
 	var ActionsPerTimestep int = 10   // ?
 	var SimulationDuration int = 2000 // 200,000/5 = 40,000
 
-	var currNodeCount int = int(NodeCount)
+	var currNodeCount int = int(InitialNodeCount)
 
 	// Slice containing all nodes
 	var nodes []*freenet.Node
 
 	// Create nodes
-	for i := uint32(0); i < NodeCount; i++ {
+	for i := uint32(0); i < InitialNodeCount; i++ {
 		nodes = append(nodes, freenet.NewNode(i))
 		nodes[i].Start()
 	}
 
 	// Create the regular ring-lattice structure
-	for i := uint32(0); i < NodeCount; i++ {
-		nodes[i].AddRoutingTableEntry(nodes[(i-1+NodeCount)%NodeCount])
+	for i := uint32(0); i < InitialNodeCount; i++ {
+		nodes[i].AddRoutingTableEntry(nodes[(i-1+InitialNodeCount)%InitialNodeCount])
 		time.Sleep(1 * time.Millisecond)
-		nodes[i].AddRoutingTableEntry(nodes[(i-2+NodeCount)%NodeCount])
+		nodes[i].AddRoutingTableEntry(nodes[(i-2+InitialNodeCount)%InitialNodeCount])
 		time.Sleep(1 * time.Millisecond)
-		nodes[i].AddRoutingTableEntry(nodes[(i+1+NodeCount)%NodeCount])
+		nodes[i].AddRoutingTableEntry(nodes[(i+1+InitialNodeCount)%InitialNodeCount])
 		time.Sleep(1 * time.Millisecond)
-		nodes[i].AddRoutingTableEntry(nodes[(i+2+NodeCount)%NodeCount])
+		nodes[i].AddRoutingTableEntry(nodes[(i+2+InitialNodeCount)%InitialNodeCount])
 		time.Sleep(1 * time.Millisecond)
 		// fmt.Print("Added ", i+1, " nodes\n")
 	}
