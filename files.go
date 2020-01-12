@@ -56,8 +56,9 @@ func (n *Node) serveRequestInsert(msg nodeMsg) {
 			// TODO: Not specified in paper
 			// Node cannot process the insert
 			// For now, send a fail
-			msg.msgType = FailMsgType
-			msg.htl = msg.depth
+			// Edit: this causes a lot of issues, don't send a fail
+
+			msg.htl = 0
 			msg.depth = 0
 			n.send(msg, msg.from)
 			return
@@ -70,8 +71,9 @@ func (n *Node) serveRequestInsert(msg nodeMsg) {
 		} else {
 			// TODO: Not specified in paper
 			// For now send a fail
-			msg.msgType = FailMsgType
-			msg.htl = msg.depth
+			// Edit: this causes a lot of issues, don't send a fail
+
+			msg.htl = 0
 			msg.depth = 0
 			if n != job.from {
 				n.send(msg, job.from)
