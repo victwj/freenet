@@ -16,6 +16,10 @@ func printNodeStates(nodes []*freenet.Node) {
 }
 
 func testBasic() {
+
+	freenet.HopsToLiveDefault = 5
+	freenet.NodeJobTimeout = 30
+
 	// Slice containing all nodes
 	var nodes []*freenet.Node
 
@@ -46,26 +50,26 @@ func testBasic() {
 	printNodeStates(nodes)
 
 	nodes[1].SendRequestInsert("/my/file/hello.txt", "hello world")
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	printNodeStates(nodes)
 
 	nodes[4].SendRequestData("/my/file/hello.txt")
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	printNodeStates(nodes)
 
 	nodes[3].SendRequestData("/my/file/hello") // doesn't exist
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	printNodeStates(nodes)
 
 	nodes[1].SendRequestInsert("/my/file/hello.txt", "testing") // re-inserting
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	printNodeStates(nodes)
 
 	nodes[2].SendRequestInsert("/my/file/hello.txt", "testing") // re-inserting
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 	printNodeStates(nodes)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(20 * time.Second)
 	printNodeStates(nodes) // Jobs must expire now
 
 }
@@ -99,6 +103,6 @@ func testPaper() {
 
 func main() {
 	testBasic()
-	testPaper()
+	// testPaper()
 	return
 }
