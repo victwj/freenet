@@ -1,6 +1,6 @@
 freenet
 test/test
 eval/eval
-*/results
+*/results*
 */*.png
 *.swp
