@@ -151,7 +151,6 @@ func (n *Node) getRoutingTableEntry(match string, routeNum int) *Node {
 	}
 
 	// Calculate all string similarities and put in a PQ
-	pq := make(priorityQueue, n.table.Len())
 	tableKeys := n.table.Keys()
 
 	// TODO: Sort will make this operation more stable but inefficient
@@ -166,6 +165,8 @@ func (n *Node) getRoutingTableEntry(match string, routeNum int) *Node {
 		return tableKeys[i].(string) < tableKeys[j].(string)
 	})
 
+	// Create the PQ
+	pq := make(priorityQueue, len(tableKeys))
 	for i, key := range tableKeys {
 		keyStr := key.(string)
 		pq[i] = &item{
