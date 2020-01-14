@@ -8,7 +8,7 @@ Median = []
 for i in range(10):
 
     fp = open("eval1/results/result{}.txt".format(i), "r")
-    lines = [line.strip() for line in fp.readlines()]
+    lines = [line.strip() for line in fp.readlines() if "code" in line or "Snapshot" in line]
     fp.close()
 
     lineCount = 0
@@ -51,10 +51,11 @@ QuartileThree = np.transpose(QuartileThree)
 plot_y_q1 = [np.mean(x) for x in QuartileOne]
 plot_y_m = [np.mean(x) for x in Median]
 plot_y_q2 = [np.mean(x) for x in QuartileThree]
+plot_x = [i*100 for i in range(len(plot_y_m))]
 
-plt.plot(plot_y_q1, linestyle=":", color="blue", label="first quartile")
-plt.plot(plot_y_m, linestyle="-", color="red", label="median")
-plt.plot(plot_y_q2, linestyle="-.", color="green", label="third quartile")
+plt.plot(plot_x, plot_y_q1, linestyle=":", color="blue", label="first quartile")
+plt.plot(plot_x, plot_y_m, linestyle="-", color="red", label="median")
+plt.plot(plot_x, plot_y_q2, linestyle="-.", color="green", label="third quartile")
 
 plt.yscale("log")
 plt.xlabel("Time")
