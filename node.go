@@ -28,6 +28,7 @@ type Node struct {
 	table     *lru.Cache     // Routing table, string->*node
 	disk      *lru.Cache     // Files stored in "disk", string->string
 	processor *nodeProcessor // Cache with timeout, stores pending msg IDs
+	on        bool
 }
 
 // Messages sent by nodes
@@ -83,6 +84,7 @@ func NewNode(id uint32) *Node {
 	n.ch = make(chan nodeMsg, NodeChannelCapacity)
 	n.table, _ = lru.New(NodeTableCapacity)
 	n.disk, _ = lru.New(NodeFileCapacity)
+	n.on = false
 
 	// Initialize processor
 	n.processor = new(nodeProcessor)
@@ -111,17 +113,25 @@ func (n *Node) newNodeMsg(msgType uint8, body string) nodeMsg {
 
 // Spawn a goroutine which will handle/route messages sent to this node
 func (n *Node) Start() {
+	n.on = true
 	go n.listen()
 }
 
 // This node will no longer handle/route any message
 func (n *Node) Stop() {
-	close(n.ch)
+	n.on = false
+	// close(n.ch)
+	n.table.Purge()
+	n.disk.Purge()
+	n.processor.jobs.Flush()
 }
 
 func (n *Node) listen() {
 	// Keep listening until the channel is closed
 	for msg := range n.ch {
+		if !n.on {
+			break
+		}
 		n.route(msg)
 	}
 }
@@ -130,6 +140,12 @@ func (n *Node) send(msg nodeMsg, dst *Node) {
 	if n == dst {
 		panic("Sending a message to self")
 	}
+
+	// Don't send if target is off
+	if !dst.on {
+		return
+	}
+
 	// We never want to forward the wrong from field
 	msg.from = n
 	// Add the length of message
