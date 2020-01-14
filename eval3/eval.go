@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -23,11 +24,12 @@ func main() {
 	var MaxNodeCount uint32 = 1000    // 1000
 	var ActionsPerTimestep int = 2    // ?
 	var SimulationDuration int = 9000 // 8600
-	// var SnapshotFreq int = 250        // ? (every 50 node additions)
-	// var SnapshotReqCount int = 50     // ? 300
+	var SnapshotFreq int = 50         // ? (every 10 node failures = 1% failure)
+	var SnapshotReqCount int = 100    // ? 300
 
 	var currNodeCount uint32 = uint32(InitialNodeCount)
 	var maxReached bool = false
+	var delNodeIDs []int
 
 	// Slice containing all nodes
 	var nodes []*freenet.Node
@@ -57,7 +59,28 @@ func main() {
 
 		// Actions every timestep
 		for j := 0; j < ActionsPerTimestep; j++ {
+
 			srcNodeID := rand.Intn(int(currNodeCount))
+			if maxReached {
+				flag := true
+				for flag {
+					// fmt.Println(len(delNodeIDs))
+					for i := 0; i < len(delNodeIDs); i++ {
+						if delNodeIDs[i] == srcNodeID {
+							flag = false
+							break
+						}
+					}
+					if !flag {
+						flag = true
+					} else {
+						flag = false
+					}
+
+					srcNodeID = rand.Intn(int(currNodeCount))
+				}
+			}
+
 			if rand.Intn(2) == 0 {
 				// Insert file
 				FileCount++
@@ -97,8 +120,9 @@ func main() {
 				}
 
 			} else {
-				// delID := rand.Intn(int(currNodeCount))
-				delID := currNodeCount
+				delID := rand.Intn(int(currNodeCount))
+				// delID := currNodeCount
+				delNodeIDs = append(delNodeIDs, delID)
 				nodes[delID].Stop()
 				currNodeCount--
 
@@ -106,23 +130,23 @@ func main() {
 			}
 		}
 
-		// // Snapshot at fixed intervals
-		// if maxReached && i%SnapshotFreq == 0 {
-		// 	time.Sleep(10 * time.Millisecond)
-		// 	freenet.HopsToLiveDefault = 100
-		// 	fmt.Println("Start Snapshot")
+		// Snapshot at fixed intervals
+		if maxReached && i%SnapshotFreq == 0 {
+			time.Sleep(10 * time.Millisecond)
+			freenet.HopsToLiveDefault = 500
+			fmt.Println("Start Snapshot")
 
-		// 	for j := 0; j < SnapshotReqCount; j++ {
-		// 		fileID := rand.Intn(FileCount)
-		// 		fileDesc := "/files/file" + strconv.Itoa(fileID)
-		// 		srcNodeID := rand.Intn(int(currNodeCount))
-		// 		nodes[srcNodeID].SendRequestData(fileDesc)
-		// 		time.Sleep(10 * time.Millisecond)
-		// 	}
+			for j := 0; j < SnapshotReqCount; j++ {
+				fileID := rand.Intn(FileCount)
+				fileDesc := "/files/file" + strconv.Itoa(fileID)
+				srcNodeID := rand.Intn(int(currNodeCount))
+				nodes[srcNodeID].SendRequestData(fileDesc)
+				time.Sleep(10 * time.Millisecond)
+			}
 
-		// 	fmt.Println("End Snapshot")
-		// 	freenet.HopsToLiveDefault = 20
-		// }
+			fmt.Println("End Snapshot")
+			freenet.HopsToLiveDefault = 20
+		}
 	}
 
 	return
