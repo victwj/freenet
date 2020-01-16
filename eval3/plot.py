@@ -69,6 +69,7 @@ plt.plot(plot_x, plot_y_q2, linestyle="-.", color="green", label="third quartile
 # plt.plot(plot_x, plot_y_a, linestyle="--", color="black", label="third quartile")
 
 plt.yscale("log")
+plt.xlim(0, 20)
 plt.xlabel("Node failure rate (%)")
 plt.ylabel("Request pathlength (hops)")
 plt.legend(loc=4)
